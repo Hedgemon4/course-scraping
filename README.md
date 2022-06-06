@@ -1,2 +1,2 @@
 # course-scraping
-Hello
+This is for gathering course names and information from other universities using web scraping in R.
