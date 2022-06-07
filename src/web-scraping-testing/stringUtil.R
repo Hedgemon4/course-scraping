@@ -1,6 +1,10 @@
 
-remove_from_string <- function(course, courseCode){
-  courseCode <- c(courseCode, " ")
-  output <- str_remove_all(course, courseCode)
-  return(output)
+remove_from_string <- function(a, b){
+  a = courseCodes
+  i = 1
+  for(val in a){
+    a[i] <- str_remove_all(val, b[i])
+    i <- i + 1
+  }
+  return(a)
 }
