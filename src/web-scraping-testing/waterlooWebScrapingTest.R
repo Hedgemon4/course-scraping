@@ -5,29 +5,45 @@ library(dplyr)
 library(stringr)
 source("stringUtil.R")
 
-# Webpage link to Waterloo Data Science Academic Calander
-link = "http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1"
-
-academicCalander = read_html(link)
+# Webpage link to Waterloo Data Science Academic Calendar
+academicCalendar = read_html("http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1")
 
 # Get webpage title
-title = academicCalander %>%
+title = academicCalendar %>%
   html_node("title") %>%
   html_text()
 
 title <- str_squish(title)
 
 # Get course codes
-courseLinks <- academicCalander %>%
-  html_nodes("#ctl00_contentMain_lblContent li a")
-
-courseCodes <- html_text(courseLinks)
-courseCodes
+courseCodes <- academicCalendar %>% html_nodes("#ctl00_contentMain_lblContent li a") %>% html_text()
 
 # Get course names
-courseNames <- academicCalander %>%
+courseNamesWithCodes <- academicCalendar %>%
   html_nodes("li li") %>%
   html_text()
 
-courseNames <- remove_from_string(courseNames, courseCodes)
-courseNames
+# Remove codes from course names
+courseNames <- remove_from_string(courseNamesWithCodes, courseCodes)
+
+# Create data frame with course codes and names
+courses = data.frame(courseCodes, courseNames)
+colnames(courses) <- c('Course Number', 'Course Name')
+
+# Display Data Frame
+View(courses)
+
+# TODO: Get course descriptions from course links
+
+# Get course links
+courseLinks <- academicCalendar %>% html_nodes("#ctl00_contentMain_lblContent li a") %>% 
+  html_attr("href") %>% paste("http://ugradcalendar.uwaterloo.ca", ., sep = "")
+
+# Get course desrciption
+get_course_description <- function(course_description_link){
+  course_description_link = "http://ugradcalendar.uwaterloo.ca/courses/STAT/441"
+  description_page <- read_html(course_description_link)
+  course_description <- description_page %>% html_nodes("center:nth-child(21) .colspan-2:nth-child(4)") %>%
+    html_text()
+}
+  
