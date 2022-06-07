@@ -31,19 +31,25 @@ courses = data.frame(courseCodes, courseNames)
 colnames(courses) <- c('Course Number', 'Course Name')
 
 # Display Data Frame
+courses['Course Description'] <- NA
 View(courses)
 
 # TODO: Get course descriptions from course links
 
-# Get course links
-courseLinks <- academicCalendar %>% html_nodes("#ctl00_contentMain_lblContent li a") %>% 
-  html_attr("href") %>% paste("http://ugradcalendar.uwaterloo.ca", ., sep = "")
-
 # Get course desrciption
-get_course_description <- function(course_description_link){
-  course_description_link = "http://ugradcalendar.uwaterloo.ca/courses/STAT/441"
-  description_page <- read_html(course_description_link)
-  course_description <- description_page %>% html_nodes("center:nth-child(21) .colspan-2:nth-child(4)") %>%
+get_courses <- function(course_description_link){
+  course_descriptions <- read_html(course_description_link) %>% html_nodes(".colspan-2:nth-child(4)") %>%
     html_text()
+  course_codes <- read_html(course_description_link) %>% html_nodes(".divTableCell:nth-child(1) strong") %>%
+    html_text()
+  course_names <- read_html(course_description_link) %>% html_nodes(".colspan-2 strong") %>%
+    html_text()
+  return(data.frame(course_codes, course_names, course_descriptions))
 }
-  
+
+compsci_courses <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/CS")
+View(compsci_courses)
+math_courses <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/MATH")
+View(math_courses)
+stat_courses <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/STAT")
+View(stat_courses)
