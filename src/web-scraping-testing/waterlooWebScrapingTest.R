@@ -69,3 +69,9 @@ stat_courses <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/STAT")
 View(stat_courses)
 
 # TODO: Get "one of", "all of", and other labels from requirements
+
+# Write files to csv
+write.csv(compsci_courses, "compsci_courses.csv")
+write.csv(math_courses, "math_courses.csv")
+write.csv(stat_courses, "stat_courses.csv")
+write.csv(courses, "courses.csv")
