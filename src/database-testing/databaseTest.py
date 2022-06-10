@@ -69,7 +69,6 @@ for row in coursesCSV:
     i = i.removeprefix("(").removesuffix(",)")
     cursor.execute("INSERT INTO waterloo_datascience_major_requirements VALUES (NULL, ?, ?, ?)", (row[1], row[2], i))
 
-
 connection.commit()
 
 cursor.execute("SELECT * FROM waterloo_datascience_major_requirements")
