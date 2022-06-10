@@ -72,6 +72,10 @@ colnames(stat_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Descr
 View(stat_courses_waterloo)
 
 # TODO: Get "one of", "all of", and other labels from requirements
+# TODO: Use merge to get spreadsheets info into one category
+# TODO: Scrape lab, requirements, and other information from Waterloo webpage
+# TODO: Generalize functions for course scraping from other universities
+# TODO: Try functions on other universities webpages
 
 # Write files to csv
 write.csv(compsci_courses_waterloo, "compsci_courses_waterloo.csv")
