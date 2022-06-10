@@ -52,7 +52,7 @@ courseNamesWithCodes <- academicCalendar %>%
 courseNames <- remove_from_string(courseNamesWithCodes, courseCodes)
 
 # Create data frame with course codes and names
-courses = data.frame(courseCodes, courseNames)
+courses_waterloo = data.frame(courseCodes, courseNames)
 colnames(courses) <- c('Course Code', 'Course Name')
 
 # Display Data Frame
@@ -61,17 +61,20 @@ View(courses)
 # TODO: Get course descriptions from course links
 
 # Get course desrciptions
-compsci_courses <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/CS")
-View(compsci_courses)
-math_courses <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/MATH")
-View(math_courses)
-stat_courses <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/STAT")
-View(stat_courses)
+compsci_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/CS")
+colnames(compsci_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
+View(compsci_courses_waterloo)
+math_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/MATH")
+colnames(math_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
+View(math_courses_waterloo)
+stat_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/STAT")
+colnames(stat_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
+View(stat_courses_waterloo)
 
 # TODO: Get "one of", "all of", and other labels from requirements
 
 # Write files to csv
-write.csv(compsci_courses, "compsci_courses.csv")
-write.csv(math_courses, "math_courses.csv")
-write.csv(stat_courses, "stat_courses.csv")
-write.csv(courses, "courses.csv")
+write.csv(compsci_courses_waterloo, "compsci_courses_waterloo.csv")
+write.csv(math_courses, "math_courses_waterloo.csv")
+write.csv(stat_courses, "stat_courses_waterloo.csv")
+write.csv(courses, "courses_waterloo.csv")
