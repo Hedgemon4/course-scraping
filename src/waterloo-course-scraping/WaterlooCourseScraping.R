@@ -5,14 +5,14 @@ library(dplyr)
 library(stringr)
 
 # functions
-get_courses <- function(course_description_link){
-  course_descriptions <- read_html(course_description_link) %>% html_nodes(".colspan-2:nth-child(4)") %>%
+get_courses <- function(course_description_link, course_description_node, course_code_node, coure_name_node){
+  course_description <- read_html(course_description_link) %>% html_nodes(course_description_node) %>%
     html_text() %>% str_squish() 
-  course_codes <- read_html(course_description_link) %>% html_nodes(".divTableCell:nth-child(1) strong") %>%
+  course_code <- read_html(course_description_link) %>% html_nodes(course_code_node) %>%
     html_text() %>% remove_from_course_code() %>% str_squish()
-  course_names <- read_html(course_description_link) %>% html_nodes(".colspan-2 strong") %>%
+  course_name <- read_html(course_description_link) %>% html_nodes(coure_name_node) %>%
     html_text() %>% str_squish()
-  return(data.frame(course_codes, course_names, course_descriptions))
+  return(data.frame(course_code, course_name, course_description))
 }
 
 remove_from_course_code <- function(course_code){
@@ -51,34 +51,47 @@ courseNamesWithCodes <- academicCalendar %>%
 # Remove codes from course names
 courseNames <- remove_from_string(courseNamesWithCodes, courseCodes)
 
+# Fix spelling errors
+courseNames[1] <- substr(courseNames[1], 0, nchar(courseNames[1]) - 1)
+
 # Create data frame with course codes and names
 courses_waterloo = data.frame(courseCodes, courseNames)
-colnames(courses) <- c('Course Code', 'Course Name')
-
-# Display Data Frame
-View(courses)
+colnames(courses_waterloo) <- c('Course Code', 'Course Name')
 
 # TODO: Get course descriptions from course links
 
-# Get course desrciptions
-compsci_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/CS")
+# Get course descriptions
+compsci_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/CS", 
+                                        ".colspan-2:nth-child(4)", ".divTableCell:nth-child(1) strong", ".colspan-2 strong")
 colnames(compsci_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
-View(compsci_courses_waterloo)
-math_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/MATH")
+math_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/MATH", 
+                                     ".colspan-2:nth-child(4)", ".divTableCell:nth-child(1) strong", ".colspan-2 strong")
 colnames(math_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
-View(math_courses_waterloo)
-stat_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/STAT")
+stat_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/STAT", 
+                                     ".colspan-2:nth-child(4)", ".divTableCell:nth-child(1) strong", ".colspan-2 strong")
 colnames(stat_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
+
+# TODO: Use merge to get spreadsheets info into one category
+courses_compsci <- merge(courses_waterloo, compsci_courses_waterloo, by=c("Course Code", "Course Name"))
+courses_math <- merge(courses_waterloo, math_courses_waterloo, by=c("Course Code", "Course Name"))
+courses_stat <- merge(courses_waterloo, stat_courses_waterloo, by=c("Course Code", "Course Name"))
+
+courses <- rbind(courses_compsci, courses_math, courses_stat)
+
+# Display data frames
+View(courses_waterloo)
+View(compsci_courses_waterloo)
+View(math_courses_waterloo)
 View(stat_courses_waterloo)
+View(courses)
 
 # TODO: Get "one of", "all of", and other labels from requirements
-# TODO: Use merge to get spreadsheets info into one category
 # TODO: Scrape lab, requirements, and other information from Waterloo webpage
 # TODO: Generalize functions for course scraping from other universities
 # TODO: Try functions on other universities webpages
 
 # Write files to csv
-write.csv(compsci_courses_waterloo, "compsci_courses_waterloo.csv")
-write.csv(math_courses, "math_courses_waterloo.csv")
-write.csv(stat_courses, "stat_courses_waterloo.csv")
-write.csv(courses, "courses_waterloo.csv")
+# write.csv(compsci_courses_waterloo, "compsci_courses_waterloo.csv")
+# write.csv(math_courses, "math_courses_waterloo.csv")
+# write.csv(stat_courses, "stat_courses_waterloo.csv")
+# write.csv(courses, "courses_waterloo.csv")
