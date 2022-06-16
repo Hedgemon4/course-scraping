@@ -27,6 +27,37 @@ stat_courses_waterloo <- get_course_dataframe("http://ugradcalendar.uwaterloo.ca
                                               ".divTableCell:nth-child(1) strong", ".colspan-2 strong", ".colspan-2:nth-child(4)")
 colnames(stat_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
 
+# Other information
+other_information <- read_html("http://ugradcalendar.uwaterloo.ca/courses/CS") %>% html_nodes("em") %>%
+  html_text() %>% str_squish()
+
+prereq <- array()
+antireq <- array()
+other <- array()
+i = 0
+
+for(item in other_information){
+  if(item == ""){
+    i = i + 1
+    next
+  }else if (grepl("Prereq", item)){
+    prereq[i][1] <- item
+  }else if (grepl("Antireq", item))
+    antireq[i][1] <- item
+  else if (grepl("Note:", item)){
+    other[i + 1][1] <- item
+  }else
+    other[i][1] <- item
+}    
+
+prereq <- data.frame(prereq)
+antireq <- data.frame(antireq)
+other <- data.frame(other)
+
+View(prereq)
+View(antireq)
+View(other)
+
 # Clean Data
 clean_from_data <- "LEC|LAB|\\,|TST|TUT|0\\.50|PRJ|RDG|STU|0\\.25|0\\.00|2\\.50"
 compsci_courses_waterloo["Course Code"] <- gsub(clean_from_data, "", compsci_courses_waterloo$`Course Code`) %>% str_squish()
