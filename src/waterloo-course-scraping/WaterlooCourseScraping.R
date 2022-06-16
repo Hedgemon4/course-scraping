@@ -1,97 +1,49 @@
-# load required packages
-# setwd("C:/Users/spenc/Documents/R/Projects/course-scraping/src/web-scraping-testing")
+# Course Scraping Waterloo Data Science Requirements
+
+# Load required packages
 library(rvest)
 library(dplyr)
 library(stringr)
 
-# functions
-get_courses <- function(course_description_link, course_description_node, course_code_node, coure_name_node){
-  course_description <- read_html(course_description_link) %>% html_nodes(course_description_node) %>%
-    html_text() %>% str_squish() 
-  course_code <- read_html(course_description_link) %>% html_nodes(course_code_node) %>%
-    html_text() %>% remove_from_course_code() %>% str_squish()
-  course_name <- read_html(course_description_link) %>% html_nodes(coure_name_node) %>%
-    html_text() %>% str_squish()
-  return(data.frame(course_code, course_name, course_description))
-}
+# Source for functions
+source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
-remove_from_course_code <- function(course_code){
-  course_code2 <- str_remove_all(course_code, "LEC|LAB|\\,|TST|TUT|0\\.50|PRJ|RDG|STU|0\\.25|0\\.00|2\\.50")
-  return(course_code2)
-}
+# Get Course Requirements
+academic_calander_link <- "http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1"
+course_requirements_waterloo <- get_course_dataframe(academic_calander_link, "#ctl00_contentMain_lblContent li a", "li li")
+colnames(course_requirements_waterloo) <- c('Course Code', 'Course Name')
 
-remove_from_string <- function(a, b){
-  i = 1
-  for(val in a){
-    remove <- paste(b[i], " ", sep = "")
-    a[i] <- str_remove(val, remove)
-    i <- i + 1
-  }
-  return(a)
-}
+# Clean Data
+course_requirements_waterloo["Course Name"] <- gsub("CS.\\d+.|MATH.\\d+.|STAT.\\d+.", "", course_requirements_waterloo$`Course Name`) %>% str_squish()
 
-# Webpage link to Waterloo Data Science Academic Calendar
-academicCalendar = read_html("http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1")
-
-# Get webpage title
-title = academicCalendar %>%
-  html_node("title") %>%
-  html_text()
-
-title <- str_squish(title)
-
-# Get course codes
-courseCodes <- academicCalendar %>% html_nodes("#ctl00_contentMain_lblContent li a") %>% html_text()
-
-# Get course names
-courseNamesWithCodes <- academicCalendar %>%
-  html_nodes("li li") %>%
-  html_text()
-
-# Remove codes from course names
-courseNames <- remove_from_string(courseNamesWithCodes, courseCodes)
-
-# Fix spelling errors
-courseNames[1] <- substr(courseNames[1], 0, nchar(courseNames[1]) - 1)
-
-# Create data frame with course codes and names
-courses_waterloo = data.frame(courseCodes, courseNames)
-colnames(courses_waterloo) <- c('Course Code', 'Course Name')
-
-# TODO: Get course descriptions from course links
-
-# Get course descriptions
-compsci_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/CS", 
-                                        ".colspan-2:nth-child(4)", ".divTableCell:nth-child(1) strong", ".colspan-2 strong")
+# Get courses by subject
+compsci_courses_waterloo <- get_course_dataframe("http://ugradcalendar.uwaterloo.ca/courses/CS", 
+                                        ".divTableCell:nth-child(1) strong", ".colspan-2 strong", ".colspan-2:nth-child(4)")
 colnames(compsci_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
-math_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/MATH", 
-                                     ".colspan-2:nth-child(4)", ".divTableCell:nth-child(1) strong", ".colspan-2 strong")
+math_courses_waterloo <- get_course_dataframe("http://ugradcalendar.uwaterloo.ca/courses/MATH", 
+                                              ".divTableCell:nth-child(1) strong", ".colspan-2 strong", ".colspan-2:nth-child(4)")
 colnames(math_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
-stat_courses_waterloo <- get_courses("http://ugradcalendar.uwaterloo.ca/courses/STAT", 
-                                     ".colspan-2:nth-child(4)", ".divTableCell:nth-child(1) strong", ".colspan-2 strong")
+stat_courses_waterloo <- get_course_dataframe("http://ugradcalendar.uwaterloo.ca/courses/STAT", 
+                                              ".divTableCell:nth-child(1) strong", ".colspan-2 strong", ".colspan-2:nth-child(4)")
 colnames(stat_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
 
-# TODO: Use merge to get spreadsheets info into one category
-courses_compsci <- merge(courses_waterloo, compsci_courses_waterloo, by=c("Course Code", "Course Name"))
-courses_math <- merge(courses_waterloo, math_courses_waterloo, by=c("Course Code", "Course Name"))
-courses_stat <- merge(courses_waterloo, stat_courses_waterloo, by=c("Course Code", "Course Name"))
+# Clean Data
+clean_from_data <- "LEC|LAB|\\,|TST|TUT|0\\.50|PRJ|RDG|STU|0\\.25|0\\.00|2\\.50"
+compsci_courses_waterloo["Course Code"] <- gsub(clean_from_data, "", compsci_courses_waterloo$`Course Code`) %>% str_squish()
+math_courses_waterloo["Course Code"] <- gsub(clean_from_data, "", math_courses_waterloo$`Course Code`) %>% str_squish()
+stat_courses_waterloo["Course Code"] <- gsub(clean_from_data, "", stat_courses_waterloo$`Course Code`) %>% str_squish()
 
-courses <- rbind(courses_compsci, courses_math, courses_stat)
+# Merge Data
+compsci <- merge(course_requirements_waterloo, compsci_courses_waterloo, by=c("Course Code", "Course Name"))
+math <- merge(course_requirements_waterloo, math_courses_waterloo, by=c("Course Code", "Course Name"))
+stat <- merge(course_requirements_waterloo, stat_courses_waterloo, by=c("Course Code", "Course Name"))
 
-# Display data frames
-View(courses_waterloo)
+courses <- rbind(compsci, math, stat)
+courses <- as.data.frame(lapply(courses, unlist))
+course_requirements_waterloo <- as.data.frame(lapply(course_requirements_waterloo, unlist))
+# Display Data Frames
 View(compsci_courses_waterloo)
+View(course_requirements_waterloo)
+View(courses)
 View(math_courses_waterloo)
 View(stat_courses_waterloo)
-View(courses)
-
-# TODO: Get "one of", "all of", and other labels from requirements
-# TODO: Scrape lab, requirements, and other information from Waterloo webpage
-# TODO: Generalize functions for course scraping from other universities
-# TODO: Try functions on other universities webpages
-
-# Write files to csv
-# write.csv(compsci_courses_waterloo, "compsci_courses_waterloo.csv")
-# write.csv(math_courses, "math_courses_waterloo.csv")
-# write.csv(stat_courses, "stat_courses_waterloo.csv")
-# write.csv(courses, "courses_waterloo.csv")
