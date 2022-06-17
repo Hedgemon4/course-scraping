@@ -4,6 +4,7 @@
 library(rvest)
 library(dplyr)
 library(stringr)
+library(stringi)
 
 # Source for functions
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
@@ -27,37 +28,104 @@ stat_courses_waterloo <- get_course_dataframe("http://ugradcalendar.uwaterloo.ca
                                               ".divTableCell:nth-child(1) strong", ".colspan-2 strong", ".colspan-2:nth-child(4)")
 colnames(stat_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
 
-# Other information
-other_information <- read_html("http://ugradcalendar.uwaterloo.ca/courses/CS") %>% html_nodes("em") %>%
-  html_text() %>% str_squish()
+# Attempt 1 to Collect other data about courses
+# other_information <- read_html("http://ugradcalendar.uwaterloo.ca/courses/CS") %>% html_nodes("em") %>%
+#   html_text() %>% str_squish()
+# 
+# other_information <- other_information[-41]
+# 
+# 
+# prereq <- array()
+# antireq <- array()
+# other <- array()
+# previous <- "String"
+# i = 0
+# 
+# for(item in other_information){
+#   if(item == ""){
+#     if(previous == ""){
+#       i = i - 1
+#     }
+#     i = i + 1
+#     previous = item
+#     next
+#   }else{
+#     if(grepl("Note:", previous)){
+#       i = i + 1
+#     }
+#     if (grepl("Prereq", item)){
+#       prereq[i][1] <- item
+#     }else if (grepl("Antireq", item))
+#       antireq[i][1] <- item
+#     else if (grepl("Note:", item)){
+#       previous = item
+#       next
+#     }else{
+#       other[i][1] <- item
+#     }
+#   previous = item
+#   }
+# }    
+# 
+# test <- data.frame(prereq, antireq, other)
+# 
+# combined <- cbind(compsci_courses_waterloo, test)
+# View(combined)
+# 
+# prereq <- data.frame(prereq)
+# antireq <- data.frame(antireq)
+# other <- data.frame(other)
+# 
+# View(prereq)
+# View(antireq)
+# View(other)
 
-prereq <- array()
-antireq <- array()
-other <- array()
-i = 0
+# Attempt 2 to collect other data frame website
+source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
+course_information <- read_html("http://ugradcalendar.uwaterloo.ca/courses/CS") %>% html_nodes(".colspan-2 :nth-child(1)") %>% html_text() %>% str_squish()
+course_information <- stri_remove_empty(course_information)
+course_information <- course_information
 
-for(item in other_information){
-  if(item == ""){
-    i = i + 1
-    next
-  }else if (grepl("Prereq", item)){
-    prereq[i][1] <- item
-  }else if (grepl("Antireq", item))
-    antireq[i][1] <- item
-  else if (grepl("Note:", item)){
-    other[i + 1][1] <- item
-  }else
-    other[i][1] <- item
-}    
+# Get compsci courses
+compsci_courses_waterloo <- get_course_dataframe("http://ugradcalendar.uwaterloo.ca/courses/CS", 
+                                                 ".divTableCell:nth-child(1) strong", ".colspan-2 strong", ".colspan-2:nth-child(4)")
+colnames(compsci_courses_waterloo) <- c('Course Code', 'Course Name', 'Course Description')
+clean_from_data <- "LEC|LAB|\\,|TST|TUT|0\\.50|PRJ|RDG|STU|0\\.25|0\\.00|2\\.50"
+compsci_courses_waterloo["Course Code"] <- gsub(clean_from_data, "", compsci_courses_waterloo$`Course Code`) %>% str_squish()
 
-prereq <- data.frame(prereq)
-antireq <- data.frame(antireq)
-other <- data.frame(other)
+# Get other information
+antireq <- vector(mode='character', length=82)
+prereq <- vector(mode='character', length=82)
+other <- vector(mode='character', length=82)
+coreq <- vector(mode='character', length=82)
+note <- vector(mode='character', length=82)
+i = 1
 
-View(prereq)
-View(antireq)
-View(other)
+for(item in course_information){
+  if(item == compsci_courses_waterloo[i + 1, 2]){
+      i = i + 1
+      next
+  }else{
+    if(grepl("Note:", item)){
+      note[i] <- item
+    }else if(grepl("Prereq:", item)){
+      prereq[i] <- item
+    }else if(grepl("Antireq:", item)){
+      antireq[i] <- item
+    }else if(grepl("Coreq:", item)){
+      coreq[i] <- item
+    }else
+      other[i] <- item
+  }
+}
 
+test <- data.frame(prereq, antireq, coreq, note, other)
+colnames(test) <- c("Prerequisite", "Antirequisite", "Corequisite", "Note", "Other Information")
+compsci_courses_waterloo <- cbind.data.frame(compsci_courses_waterloo, test)
+
+View(compsci_courses_waterloo)
+
+  
 # Clean Data
 clean_from_data <- "LEC|LAB|\\,|TST|TUT|0\\.50|PRJ|RDG|STU|0\\.25|0\\.00|2\\.50"
 compsci_courses_waterloo["Course Code"] <- gsub(clean_from_data, "", compsci_courses_waterloo$`Course Code`) %>% str_squish()
