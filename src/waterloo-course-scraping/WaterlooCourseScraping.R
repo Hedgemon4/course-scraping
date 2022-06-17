@@ -86,4 +86,23 @@ View(courses)
 # Get categories from website
 web_link <- "http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1"
 node1 <- "p+ ul li"
-categories1 <- read_html(web_link) %>% html_nodes(node1) %>% html_text() %>% str_squish()
+info <- read_html(web_link) %>% html_nodes(node1) %>% html_text() %>% str_squish()
+
+category_tyes <- c("One", "Two", "Three", "All")
+categories <- matrix()
+lable <- NULL
+i <- 0
+j <- 1
+for(item in info){
+  for(type in category_tyes){
+    if(grepl(type, item)){
+      i = i + 1
+      lable[i] <- item
+      j <- 1
+      next
+    }
+    categories[i, j] <- item
+    j <- j + 1
+  }
+}
+
