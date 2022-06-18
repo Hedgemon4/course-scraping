@@ -19,7 +19,6 @@ seperate_information <- function(match_item, column_name, web_link, node, course
   information <- read_html(web_link) %>% html_nodes(node) %>% html_text() %>% str_squish() %>% stri_remove_empty()
   
   columns <- list()
-  
   i = 1
   for(item in match_item){
     columns[[i]] <- vector(mode = vector_type, length = nrow(course_dataframe))
@@ -81,6 +80,29 @@ seperate_information_increment <- function(match_item, column_name, web_link, no
     }
   }
   
+  seperate <- data.frame(columns)
+  colnames(seperate) <- column_name
+  course_dataframe <- cbind.data.frame(course_dataframe, seperate)
+  return(course_dataframe)
+}
+
+seperate_information_single <- function(match_item, column_name, web_link, node, course_dataframe, vector_type, break_if_match){
+  information <- read_html(web_link) %>% html_nodes(node) %>% html_text() %>% str_squish() %>% stri_remove_empty()
+  columns <- vector(mode = vector_type, length = nrow(course_dataframe))
+  j = 0
+  for(item in information){
+    j = j + 1
+    for(column in match_item){
+      if(grepl(column, item)){
+        if(vector_type == "logical")
+          columns[j] <- TRUE
+        else
+          columns[j] <- column
+        if(break_if_match)
+          break
+      }
+    }
+  }
   seperate <- data.frame(columns)
   colnames(seperate) <- column_name
   course_dataframe <- cbind.data.frame(course_dataframe, seperate)

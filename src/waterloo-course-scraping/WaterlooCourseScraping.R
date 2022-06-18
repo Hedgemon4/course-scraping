@@ -182,7 +182,7 @@ credit_value <- c("0.00", "0.25", "0.50", "2.50")
 name <- c("Credit Amount")
 
 compsci_courses_waterloo <-
-  seperate_information(
+  seperate_information_single(
     credit_value,
     name,
     "http://ugradcalendar.uwaterloo.ca/courses/CS",
@@ -193,7 +193,7 @@ compsci_courses_waterloo <-
   )
 
 math_courses_waterloo <-
-  seperate_information(
+  seperate_information_single(
     credit_value,
     name,
     "http://ugradcalendar.uwaterloo.ca/courses/MATH",
@@ -204,7 +204,7 @@ math_courses_waterloo <-
   )
 
 stat_courses_waterloo <-
-  seperate_information(
+  seperate_information_single(
     credit_value,
     name,
     "http://ugradcalendar.uwaterloo.ca/courses/STAT",
