@@ -27,7 +27,7 @@ course_requirements_waterloo["Course Name"] <-
 course_requirements_waterloo[1, 2] <-
   "Elementary Algorithm Design and Data Abstraction"
 
-categories <-
+categories <- 
   get_requirement_categories(
     "http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1",
     "p+ ul li",
