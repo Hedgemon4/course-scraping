@@ -72,12 +72,26 @@ stat_courses_waterloo["Course Code"] <-
 
 # Get other course information
 
+matches <- c("Prereq:", "Antireq:", "Coreq:", "Note", ".")
+columns <- c("Prerequisite","Antirequisite","Corequisite","Note","Other Information")
+
+test1 <- seperate_information(matches, columns, "http://ugradcalendar.uwaterloo.ca/courses/CS", ".colspan-2 :nth-child(1)", compsci_courses_waterloo, "character", TRUE, 2)
+
 compsci_courses_waterloo <- cbind.data.frame(compsci_courses_waterloo, get_other_course_information(
   "http://ugradcalendar.uwaterloo.ca/courses/CS", ".colspan-2 :nth-child(1)", compsci_courses_waterloo))
 math_courses_waterloo <- cbind.data.frame(math_courses_waterloo, get_other_course_information(
   "http://ugradcalendar.uwaterloo.ca/courses/MATH", ".colspan-2 :nth-child(1)", math_courses_waterloo))
 stat_courses_waterloo <- cbind.data.frame(stat_courses_waterloo, get_other_course_information(
   "http://ugradcalendar.uwaterloo.ca/courses/STAT", ".colspan-2 :nth-child(1)", stat_courses_waterloo))
+
+# TODO: Scrape lab, tutorial, and other information from course title
+course_component <- c("LEC", "LAB", "TST", "TUT", "PRJ", "RDG", "STU")
+# credit_Values <- c("0\\.00", "0\\.25", "0\\.50", "2\\.50")
+course_component_name <- c("Lecture", "Lab", "Test Slot", "Tutorial", "Project", "Reading", "Studio")
+web_link <- "http://ugradcalendar.uwaterloo.ca/courses/CS"
+node <- ".divTableCell:nth-child(1) strong"
+testframe <- seperate_information(course_component, course_component_name, web_link, node, compsci_courses_waterloo, "logical")
+
 
 # Merge Data
 compsci <- merge(course_requirements_waterloo,compsci_courses_waterloo, by = c("Course Code", "Course Name"))
