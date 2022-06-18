@@ -49,7 +49,7 @@ seperate_information <- function(match_item, column_name, web_link, node, course
   return(course_dataframe)
 }
 
-seperate_information <- function(match_item, column_name, web_link, node, course_dataframe, vector_type, break_if_match, increment_match, match_offset){
+seperate_information_increment <- function(match_item, column_name, web_link, node, course_dataframe, vector_type, break_if_match, increment_match, match_offset){
   information <- read_html(web_link) %>% html_nodes(node) %>% html_text() %>% str_squish() %>% stri_remove_empty()
   columns <- list()
   n <- nrow(course_dataframe)
