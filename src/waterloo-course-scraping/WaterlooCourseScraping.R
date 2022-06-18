@@ -46,8 +46,10 @@ compsci_courses_waterloo <-
     ".colspan-2 strong",
     ".colspan-2:nth-child(4)"
   )
+
 colnames(compsci_courses_waterloo) <-
   c('Course Code', 'Course Name', 'Course Description')
+
 math_courses_waterloo <-
   get_course_dataframe(
     "http://ugradcalendar.uwaterloo.ca/courses/MATH",
@@ -55,8 +57,10 @@ math_courses_waterloo <-
     ".colspan-2 strong",
     ".colspan-2:nth-child(4)"
   )
+
 colnames(math_courses_waterloo) <-
   c('Course Code', 'Course Name', 'Course Description')
+
 stat_courses_waterloo <-
   get_course_dataframe(
     "http://ugradcalendar.uwaterloo.ca/courses/STAT",
@@ -64,6 +68,7 @@ stat_courses_waterloo <-
     ".colspan-2 strong",
     ".colspan-2:nth-child(4)"
   )
+
 colnames(stat_courses_waterloo) <-
   c('Course Code', 'Course Name', 'Course Description')
 
@@ -88,57 +93,48 @@ columns <-
     "Other Information")
 
 compsci_courses_waterloo <-
-  cbind.data.frame(
+  seperate_information_increment(
+    matches,
+    columns,
+    "http://ugradcalendar.uwaterloo.ca/courses/CS",
+    ".colspan-2 :nth-child(1)",
     compsci_courses_waterloo,
-    seperate_information_increment(
-      matches,
-      columns,
-      "http://ugradcalendar.uwaterloo.ca/courses/CS",
-      ".colspan-2 :nth-child(1)",
-      compsci_courses_waterloo,
-      "character",
-      TRUE,
-      2,
-      1
-    )
+    "character",
+    TRUE,
+    2,
+    1
   )
 
 math_courses_waterloo <-
-  cbind.data.frame(
+  seperate_information_increment(
+    matches,
+    columns,
+    "http://ugradcalendar.uwaterloo.ca/courses/MATH",
+    ".colspan-2 :nth-child(1)",
     math_courses_waterloo,
-    seperate_information_increment(
-      matches,
-      columns,
-      "http://ugradcalendar.uwaterloo.ca/courses/MATH",
-      ".colspan-2 :nth-child(1)",
-      math_courses_waterloo,
-      "character",
-      TRUE,
-      2,
-      1
-    )
+    "character",
+    TRUE,
+    2,
+    1
   )
 
 stat_courses_waterloo <-
-  cbind.data.frame(
+  seperate_information_increment(
+    matches,
+    columns,
+    "http://ugradcalendar.uwaterloo.ca/courses/STAT",
+    ".colspan-2 :nth-child(1)",
     stat_courses_waterloo,
-    seperate_information_increment(
-      matches,
-      columns,
-      "http://ugradcalendar.uwaterloo.ca/courses/STAT",
-      ".colspan-2 :nth-child(1)",
-      stat_courses_waterloo,
-      "character",
-      TRUE,
-      2,
-      1
-    )
+    "character",
+    TRUE,
+    2,
+    1
   )
 
-# TODO: Scrape lab, tutorial, and other information from course title
+# Scrape Course Component Data
 course_component <-
   c("LEC", "LAB", "TST", "TUT", "PRJ", "RDG", "STU")
-# credit_Values <- c("0\\.00", "0\\.25", "0\\.50", "2\\.50")
+
 course_component_name <-
   c("Lecture",
     "Lab",
@@ -149,45 +145,73 @@ course_component_name <-
     "Studio")
 
 compsci_courses_waterloo <-
-  cbind.data.frame(
+  seperate_information(
+    course_component,
+    course_component_name,
+    "http://ugradcalendar.uwaterloo.ca/courses/CS",
+    ".divTableCell:nth-child(1) strong",
     compsci_courses_waterloo,
-    seperate_information(
-      course_component,
-      course_component_name,
-      "http://ugradcalendar.uwaterloo.ca/courses/CS",
-      ".divTableCell:nth-child(1) strong",
-      compsci_courses_waterloo,
-      "logical",
-      FALSE
-    )
+    "logical",
+    FALSE
   )
 
 math_courses_waterloo <-
-  cbind.data.frame(
+  seperate_information(
+    course_component,
+    course_component_name,
+    "http://ugradcalendar.uwaterloo.ca/courses/MATH",
+    ".divTableCell:nth-child(1) strong",
     math_courses_waterloo,
-    seperate_information(
-      course_component,
-      course_component_name,
-      "http://ugradcalendar.uwaterloo.ca/courses/MATH",
-      ".divTableCell:nth-child(1) strong",
-      math_courses_waterloo,
-      "logical",
-      FALSE
-    )
+    "logical",
+    FALSE
   )
 
 stat_courses_waterloo <-
-  cbind.data.frame(
+  seperate_information(
+    course_component,
+    course_component_name,
+    "http://ugradcalendar.uwaterloo.ca/courses/STAT",
+    ".divTableCell:nth-child(1) strong",
     stat_courses_waterloo,
-    seperate_information(
-      course_component,
-      course_component_name,
-      "http://ugradcalendar.uwaterloo.ca/courses/STAT",
-      ".divTableCell:nth-child(1) strong",
-      stat_courses_waterloo,
-      "logical",
-      FALSE
-    )
+    "logical",
+    FALSE
+  )
+
+# Scrape Credit Data
+credit_value <- c("0.00", "0.25", "0.50", "2.50")
+name <- c("Credit Amount")
+
+compsci_courses_waterloo <-
+  seperate_information(
+    credit_value,
+    name,
+    "http://ugradcalendar.uwaterloo.ca/courses/CS",
+    ".divTableCell:nth-child(1) strong",
+    compsci_courses_waterloo,
+    "character",
+    TRUE
+  )
+
+math_courses_waterloo <-
+  seperate_information(
+    credit_value,
+    name,
+    "http://ugradcalendar.uwaterloo.ca/courses/MATH",
+    ".divTableCell:nth-child(1) strong",
+    math_courses_waterloo,
+    "character",
+    TRUE
+  )
+
+stat_courses_waterloo <-
+  seperate_information(
+    credit_value,
+    name,
+    "http://ugradcalendar.uwaterloo.ca/courses/STAT",
+    ".divTableCell:nth-child(1) strong",
+    stat_courses_waterloo,
+    "character",
+    TRUE
   )
 
 # Merge Data
