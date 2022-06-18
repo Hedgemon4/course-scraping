@@ -24,6 +24,12 @@ course_requirements_waterloo["Course Name"] <-
   gsub("CS.\\d+.|MATH.\\d+.|STAT.\\d+.",
        "",
        course_requirements_waterloo$`Course Name`) %>% str_squish()
+course_requirements_waterloo[1, 2] <- "Elementary Algorithm Design and Data Abstraction"
+
+categories <- get_requirement_categories("http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1", "p+ ul li", c("One", "Two", "Three", "All"))
+colnames(categories) <- c("Category", "Required from Category")
+
+course_requirements_waterloo <- cbind.data.frame(course_requirements_waterloo, categories)
 
 # Get courses by subject
 compsci_courses_waterloo <-
@@ -80,29 +86,3 @@ stat <-merge(course_requirements_waterloo,stat_courses_waterloo,by = c("Course C
 
 courses <- rbind(compsci, math, stat)
 View(courses)
-
-# TODO: Categorize list and how many are required from each category (named array for mapping)
-
-# Get categories from website
-web_link <- "http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1"
-node1 <- "p+ ul li"
-info <- read_html(web_link) %>% html_nodes(node1) %>% html_text() %>% str_squish()
-
-category_tyes <- c("One", "Two", "Three", "All")
-categories <- matrix()
-lable <- NULL
-i <- 0
-j <- 1
-for(item in info){
-  for(type in category_tyes){
-    if(grepl(type, item)){
-      i = i + 1
-      lable[i] <- item
-      j <- 1
-      next
-    }
-    categories[i, j] <- item
-    j <- j + 1
-  }
-}
-
