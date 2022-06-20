@@ -9,19 +9,6 @@ library(stringi)
 # Source for functions
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
-# TODO: Get course requirements from stat page
-# stat1 <-
-#   get_course_dataframe(
-#     "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1",
-#     "#ctl00_contentMain_lblContent > ul:nth-child(2) li"
-#   )
-# 
-# stat2 <- get_course_dataframe("http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1", "#ctl00_contentMain_lblContent ul ul li")
-# 
-# stat3 <- get_course_dataframe("http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1", "#ctl00_contentMain_lblContent ul ul a")
-# 
-# stat4 <- get_course_dataframe("http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1", "p+ ul li")
-
 waterloo_course_requirements <- get_course_dataframe("http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1", "#ctl00_contentMain_lblContent ul ul a")
 colnames(waterloo_course_requirements) <- c("Course Code")
 
@@ -35,15 +22,34 @@ colnames(waterloo_course_requirements) <- c("Course Code")
 # For example One additional 300- or 400-level STAT course -> STAT 3** One of One additional 300- level STAT Course
 
 # Get Categories
-test1 <- read_html("http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1") %>% html_nodes("#ctl00_contentMain_lblContent > ul > li") %>% html_text() %>% str_squish()
 
+web_link <- "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
+categories <- read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li") %>% html_text() %>% str_squish()
 
-categories <- 
-  get_requirement_categories(
-    "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1",
-    "p+ ul li",
-    c("", "Two of", "Three of", "All of", "Four")
-  )
+category_names <- c("Category 1", "Category 2", "Category 3", "Category 4", "Category 5", "Category 6", "Category 7", "Category 8")
+
+requirement_categories <- vector(mode = "character", length = nrow(waterloo_course_requirements))
+
+test2 <- read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li > ul > li") %>% html_text() %>% str_squish()
+test3 <- read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li") %>% html_text() %>% str_squish()
+
+i <- 0
+j <- 0
+for(item in waterloo_course_requirements$`Course Code`){
+  i <- i + 1
+  j <- 0
+  for(category in categories){
+    j <- j + 1
+    if(grepl(item, category)){
+      requirement_categories[i] <- category_names[j] 
+    }
+  }
+}
+
+# Function to scane for category, and append category header if item is not found
+
+waterloo_course_requirements <- cbind(waterloo_course_requirements, requirement_categories)
+colnames(waterloo_course_requirements) <- c("Course Code", "Category")
 
 # Get courses
 compsci_courses_waterloo <-
