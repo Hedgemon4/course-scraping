@@ -4,7 +4,17 @@ library(dplyr)
 library(stringr)
 library(stringi)
 
+#' get_course_dataframe
+#'
+#' @param course_description_link 
+#' @param ... 
+#'
+#' @return dataframe
+#' @export
+#'
+#' @examples
 get_course_dataframe <- function(course_description_link, ...){
+  
   nodes <- list(...)
   course_information <- NULL
   for (item in nodes){
