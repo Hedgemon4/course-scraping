@@ -33,6 +33,14 @@ requirement_categories <- vector(mode = "character", length = nrow(waterloo_cour
 test2 <- read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li > ul > li") %>% html_text() %>% str_squish()
 test3 <- read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li") %>% html_text() %>% str_squish()
 
+# Can probably use a counter and loop to scrape specific items which are in a category
+
+# Reads bullet list
+test4 <- read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li:nth-child(6) > ul > li") %>% html_text() %>% str_squish()
+
+# Loop using html tags
+
+# Loop using string matching
 i <- 0
 j <- 0
 for(item in waterloo_course_requirements$`Course Code`){
