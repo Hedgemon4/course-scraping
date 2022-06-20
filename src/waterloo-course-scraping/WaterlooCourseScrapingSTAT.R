@@ -239,8 +239,5 @@ stat <- merge(waterloo_course_requirements, stat_courses_waterloo, by="Course Co
 engl <- merge(waterloo_course_requirements, engl_courses_waterloo, by="Course Code")
 mthel <- merge(waterloo_course_requirements, mthel_courses_waterloo, by="Course Code")
 
-other_requirements <- data.frame("STAT")
-colnames(other_requirements) <- c("Course Code")
-other <- merge(waterloo_course_requirements, other_requirements, by="Course Code")
 
 courses <- rbind(amath, math, cs, stat, engl, mthel)

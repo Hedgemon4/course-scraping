@@ -4,15 +4,6 @@ library(dplyr)
 library(stringr)
 library(stringi)
 
-#' get_course_dataframe
-#'
-#' @param course_description_link 
-#' @param ... 
-#'
-#' @return dataframe
-#' @export
-#'
-#' @examples
 get_course_dataframe <- function(course_description_link, ...){
   
   nodes <- list(...)
@@ -146,3 +137,5 @@ get_requirement_categories <- function(web_link, node, category_type){
   }
   return(data.frame(category, number_from_category))
 }
+
+# TODO: identify by type of bullet point instead of string
