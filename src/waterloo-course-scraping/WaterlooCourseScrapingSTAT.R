@@ -16,10 +16,6 @@ waterloo_course_requirements <-
   )
 colnames(waterloo_course_requirements) <- c("Course Code")
 
-# TODO: Pull strings for categories (like requirement v on degree navigator)
-
-# TODO: Filter categories by html layout instead of string matching
-
 # TODO: Try putting into a list of list
 
 # TODO: Put other requirements into main courses document.
@@ -29,8 +25,18 @@ colnames(waterloo_course_requirements) <- c("Course Code")
 
 web_link <-
   "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
-categories <-
-  read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li") %>% html_text() %>% str_squish()
+
+# Pull strings for categories (like requirement v on degree navigator)
+categories_web <- 
+  read_html(web_link) %>% html_elements(xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li/text()") %>% html_text() %>% str_squish()
+
+categories_web[4] <- paste(categories_web[4], "STAT", categories_web[5], sep=" ")
+categories_web <- categories_web[-5]
+
+# categories_web <-
+#  read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li") %>% html_text() %>% str_squish()
+
+category_descriptions <- c("One", "Two", "Three", "Four", "All")
 
 category_names <-
   c(
@@ -44,11 +50,15 @@ category_names <-
     "Category 8"
   )
 
-requirement_categories <-
+requirement_categories_courses <-
   vector(mode = "character",
          length = nrow(waterloo_course_requirements))
 
 courses <-
+  vector(mode = "character",
+         length = nrow(waterloo_course_requirements))
+
+category_description_courses <-
   vector(mode = "character",
          length = nrow(waterloo_course_requirements))
 
@@ -59,38 +69,26 @@ courses <-
 
 # Reads bullet list
 test4 <-
-  read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li:nth-child(6) > ul > li") %>% html_text() %>% str_squish()
+  read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li:nth-child(6) > ul > li > a") %>% html_text() %>% str_squish()
 
 # Loop using html tags
-n <- as.numeric(length(categories))
-i <- as.numeric(1)
+n <- as.numeric(length(categories_web))
+i <- 1
 j <- 1
 
+# Filter categories by html layout instead of string matching
 while (i <= n) {
   courses_in_category <-
     read_html(web_link) %>% html_nodes(paste0("#ctl00_contentMain_lblContent > ul > li:nth-child(",
                                                i,
-                                               ") > ul > li")) %>% html_text() %>% str_squish()
+                                               ") > ul > li > a")) %>% html_text() %>% str_squish()
   for(course in courses_in_category){
     requirement_categories[j] <- category_names[i]
     courses[j] <- course
+    category_description_courses[j] <- categories
     j = j + 1
   }
   i = i + 1
-}
-
-# Loop using string matching
-i <- 0
-j <- 0
-for (item in waterloo_course_requirements$`Course Code`) {
-  i <- i + 1
-  j <- 0
-  for (category in categories) {
-    j <- j + 1
-    if (grepl(item, category)) {
-      requirement_categories[i] <- category_names[j]
-    }
-  }
 }
 
 # Function to scane for category, and append category header if item is not found
