@@ -14,6 +14,7 @@ waterloo_course_requirements <-
     "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1",
     "#ctl00_contentMain_lblContent ul ul a"
   )
+
 colnames(waterloo_course_requirements) <- c("Course Code")
 
 # TODO: Try putting into a list of list
@@ -24,12 +25,17 @@ web_link <-
   "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
 
 # Pull strings for categories (like requirement v on degree navigator)
-categories_web <-
-  read_html(web_link) %>% html_elements(xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li/text()") %>% html_text() %>% str_squish()
-
-categories_web[4] <-
-  paste(categories_web[4], "STAT", categories_web[5], sep = " ")
-categories_web <- categories_web[-5]
+category_nodes <- read_html(web_link) %>% html_elements(xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li") 
+category_text <- vector(mode = "character", length = length(category_nodes))
+test1 <- read_html(web_link) %>% html_elements(xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li[1]/text()") %>% html_text() %>% str_squish()
+i <- 1
+for(item in category_nodes){
+  if(grepl("ul", item))
+    category_text[i] <- read_html(web_link) %>% html_elements(xpath =  paste0("//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li[", i, "]/text()")) %>% html_text() %>% str_squish()
+  else
+    category_text[i] <- read_html(web_link) %>% html_elements(xpath = paste0("//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li[", i, "]")) %>% html_text() %>% str_squish()
+  i = i + 1
+}
 
 category_names <-
   c(
@@ -51,11 +57,22 @@ category_description_courses <-
   vector(mode = "character",
          length = nrow(waterloo_course_requirements))
 
+category_is_used <- vector(mode = "logical", length = length(category_text))
+
+courses <- vector(mode = "character")
+
+course_codes <- "STAT(![0-9])|MATH(![0-9])|AMATH(![0-9])|ENGL(![0-9])|CS(![0-9])|MTHEL(![0-9])"
+
+decsription_for_general_requirement <- vector(mode = "character")
+decsription_for_general_requirement_element <- vector(mode = "numeric")
+
 # Loop using html tags
-n <- as.numeric(length(categories_web))
+n <- as.numeric(length(category_text))
 i <- 1
 j <- 1
+k <- 0
 
+# test1 <- read_html(web_link) %>% html_elements(xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li/ul/li") %>% html_text() %>% str_squish()
 # Filter categories by html layout instead of string matching
 while (i <= n) {
   courses_in_category <-
@@ -65,22 +82,30 @@ while (i <= n) {
       ") > ul > li > a"
     )) %>% html_text() %>% str_squish()
   for (course in courses_in_category) {
+    k <- k + 1
+    if(!grepl("[0-9]", course)){
+      decsription_for_general_requirement[length(decsription_for_general_requirement) + 1] <- read_html(web_link) %>% html_node(paste0("#ctl00_contentMain_lblContent > ul > li:nth-child(" , i, ") > ul > li:nth-child(", k, ")")) %>% html_text() %>% str_squish()
+      decsription_for_general_requirement_element <- j
+    }
+    courses[j] <- course
     requirement_categories_courses[j] <- category_names[i]
-    category_description_courses[j] <- categories_web[i]
+    category_description_courses[j] <- category_text[i]
+    category_is_used[i] <- TRUE
     j = j + 1
   }
+  k <- 0
   i = i + 1
 }
 
 course_categories <-
-  data.frame(requirement_categories_courses,
+  data.frame(courses, requirement_categories_courses,
              category_description_courses)
-colnames(course_categories) <- c("Category", "Category Requirement")
+colnames(course_categories) <- c("Course Code","Category", "Category Requirement")
 
-# Function to scane for category, and append category header if item is not found
+# Function to scan for category, and append category header if item is not found
 
 waterloo_course_requirements <-
-  cbind(waterloo_course_requirements, course_categories)
+  merge(waterloo_course_requirements, course_categories, by = "Course Code")
 
 # Get courses
 compsci_courses_waterloo <-
@@ -272,6 +297,7 @@ amath_courses_waterloo <-
     "logical",
     FALSE
   )
+
 compsci_courses_waterloo <-
   seperate_information(
     names,
@@ -282,6 +308,7 @@ compsci_courses_waterloo <-
     "logical",
     FALSE
   )
+
 stat_courses_waterloo <-
   seperate_information(
     names,
@@ -292,6 +319,7 @@ stat_courses_waterloo <-
     "logical",
     FALSE
   )
+
 math_courses_waterloo <-
   seperate_information(
     names,
@@ -341,15 +369,10 @@ mthel <-
 # TODO: Add courses of any level categories to data frame
 # TODO: Find a way to generalize categories of any level
 
-other <- data.frame(c("STAT", "MATH", "CS", "AMATH", "ENGL"))
-colnames(other) <- "Course Code"
-other <- merge(waterloo_course_requirements, other, by = "Course Code")
-other[1] <- "STAT 4**"
 
-
-courses <- rbind(amath, math, cs, stat, engl, mthel)
-courses <-
-  courses[, c(
+requirements <- rbind(amath, math, cs, stat, engl, mthel)
+requirements <-
+  requirements[, c(
     "Course Code",
     "Course Name",
     "Course Description",
@@ -373,4 +396,4 @@ courses <-
 # For example One additional 300- or 400-level STAT course -> STAT 3** One of One additional 300- level STAT Course
 
 # TODO: Combine the code from the CS and STAT waterloo course scraping Files
-# TODO: Generlize this combined code and functions to apply to other universities
+# TODO: Generalize this combined code and functions to apply to other universities
