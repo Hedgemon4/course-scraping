@@ -110,6 +110,7 @@ seperate_information_single <- function(match_item, column_name, web_link, node,
   return(course_dataframe)
 }
 
+# TODO: Change this to use html tags instead of regex matching
 get_requirement_categories <- function(web_link, node, category_type){
   info <- read_html(web_link) %>% html_nodes(node) %>% html_text() %>% str_squish()
   category <- NULL

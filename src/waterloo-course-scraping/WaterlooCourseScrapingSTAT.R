@@ -18,25 +18,18 @@ colnames(waterloo_course_requirements) <- c("Course Code")
 
 # TODO: Try putting into a list of list
 
-# TODO: Put other requirements into main courses document.
-# For example One additional 300- or 400-level STAT course -> STAT 3** One of One additional 300- level STAT Course
-
 # Get Categories
 
 web_link <-
   "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
 
 # Pull strings for categories (like requirement v on degree navigator)
-categories_web <- 
+categories_web <-
   read_html(web_link) %>% html_elements(xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li/text()") %>% html_text() %>% str_squish()
 
-categories_web[4] <- paste(categories_web[4], "STAT", categories_web[5], sep=" ")
+categories_web[4] <-
+  paste(categories_web[4], "STAT", categories_web[5], sep = " ")
 categories_web <- categories_web[-5]
-
-# categories_web <-
-#  read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li") %>% html_text() %>% str_squish()
-
-category_descriptions <- c("One", "Two", "Three", "Four", "All")
 
 category_names <-
   c(
@@ -54,22 +47,9 @@ requirement_categories_courses <-
   vector(mode = "character",
          length = nrow(waterloo_course_requirements))
 
-courses <-
-  vector(mode = "character",
-         length = nrow(waterloo_course_requirements))
-
 category_description_courses <-
   vector(mode = "character",
          length = nrow(waterloo_course_requirements))
-
-# Courses
-# test2 <- read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li > ul > li") %>% html_text() %>% str_squish()
-
-# Can probably use a counter and loop to scrape specific items which are in a category
-
-# Reads bullet list
-test4 <-
-  read_html(web_link) %>% html_nodes("#ctl00_contentMain_lblContent > ul > li:nth-child(6) > ul > li > a") %>% html_text() %>% str_squish()
 
 # Loop using html tags
 n <- as.numeric(length(categories_web))
@@ -79,24 +59,28 @@ j <- 1
 # Filter categories by html layout instead of string matching
 while (i <= n) {
   courses_in_category <-
-    read_html(web_link) %>% html_nodes(paste0("#ctl00_contentMain_lblContent > ul > li:nth-child(",
-                                               i,
-                                               ") > ul > li > a")) %>% html_text() %>% str_squish()
-  for(course in courses_in_category){
-    requirement_categories[j] <- category_names[i]
-    courses[j] <- course
-    category_description_courses[j] <- categories
+    read_html(web_link) %>% html_nodes(paste0(
+      "#ctl00_contentMain_lblContent > ul > li:nth-child(",
+      i,
+      ") > ul > li > a"
+    )) %>% html_text() %>% str_squish()
+  for (course in courses_in_category) {
+    requirement_categories_courses[j] <- category_names[i]
+    category_description_courses[j] <- categories_web[i]
     j = j + 1
   }
   i = i + 1
 }
 
+course_categories <-
+  data.frame(requirement_categories_courses,
+             category_description_courses)
+colnames(course_categories) <- c("Category", "Category Requirement")
+
 # Function to scane for category, and append category header if item is not found
 
 waterloo_course_requirements <-
-  cbind(waterloo_course_requirements, requirement_categories)
-colnames(waterloo_course_requirements) <-
-  c("Course Code", "Category")
+  cbind(waterloo_course_requirements, course_categories)
 
 # Get courses
 compsci_courses_waterloo <-
@@ -318,6 +302,7 @@ math_courses_waterloo <-
     "logical",
     FALSE
   )
+
 engl_courses_waterloo <-
   seperate_information(
     names,
@@ -328,6 +313,7 @@ engl_courses_waterloo <-
     "logical",
     FALSE
   )
+
 mthel_courses_waterloo <-
   seperate_information(
     names,
@@ -352,5 +338,39 @@ engl <-
 mthel <-
   merge(waterloo_course_requirements, mthel_courses_waterloo, by = "Course Code")
 
+# TODO: Add courses of any level categories to data frame
+# TODO: Find a way to generalize categories of any level
+
+other <- data.frame(c("STAT", "MATH", "CS", "AMATH", "ENGL"))
+colnames(other) <- "Course Code"
+other <- merge(waterloo_course_requirements, other, by = "Course Code")
+other[1] <- "STAT 4**"
+
 
 courses <- rbind(amath, math, cs, stat, engl, mthel)
+courses <-
+  courses[, c(
+    "Course Code",
+    "Course Name",
+    "Course Description",
+    "Category",
+    "Category Requirement",
+    "Prerequisite",
+    "Antirequisite",
+    "Corequisite",
+    "Note",
+    "Other Information",
+    "Lecture",
+    "Lab",
+    "Test Slot",
+    "Tutorial",
+    "Project",
+    "Reading",
+    "Studio"
+  )]
+
+# TODO: Put other requirements into main courses document using generalized function
+# For example One additional 300- or 400-level STAT course -> STAT 3** One of One additional 300- level STAT Course
+
+# TODO: Combine the code from the CS and STAT waterloo course scraping Files
+# TODO: Generlize this combined code and functions to apply to other universities
