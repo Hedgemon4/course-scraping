@@ -6,8 +6,110 @@ library(dplyr)
 library(stringr)
 library(stringi)
 
-# Source for functions
+# Source for Utility functions
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
+
+# TODO List ####
+# TODO: Clean code
+# TODO: Get ride of non generic functions
+# > match_item <- c("MATH 212 LEC,TST, TUT", "MATH 213, TST, TUT")
+# > grepl("LEC", match_item)
+# [1]  TRUE FALSE
+# > grepl("TST", match_item)
+# [1] TRUE TRUE
+# TODO: Spell checking library(stringdist)
+
+# Functions ####
+seperate_information <- function(match_item, column_name, web_link, node, course_dataframe, vector_type, break_if_match){
+  information <- read_html(web_link) %>% html_nodes(node) %>% html_text() %>% str_squish() %>% stri_remove_empty()
+  columns <- list()
+  
+  i = 1
+  for(item in match_item){
+    columns[[i]] <- vector(mode = vector_type, length = nrow(course_dataframe))
+    i = i + 1
+  }
+  
+  i <- 1
+  for(item in match_item){
+    if(vector_type == "logical"){
+      columns[[i]] <- grepl(item, information)
+    }else{
+      columns[[i]] <- grep(item, information, value = TRUE)
+    } 
+    i = i + 1
+  }
+  
+  seperate <- data.frame(columns)
+  colnames(seperate) <- column_name
+  course_dataframe <- cbind.data.frame(course_dataframe, seperate)
+  return(course_dataframe)
+}
+
+seperate_information_increment <- function(match_item, column_name, web_link, node, course_dataframe, vector_type, break_if_match, increment_match, match_offset){
+  information <- read_html(web_link) %>% html_nodes(node) %>% html_text() %>% str_squish() %>% stri_remove_empty()
+  columns <- list()
+  n <- nrow(course_dataframe)
+  
+  i = 1
+  for(item in match_item){
+    columns[[i]] <- vector(mode = vector_type, length = n)
+    i = i + 1
+  }
+  
+  j = 1
+  for(item in information){
+    i = 0
+    if (j < n & item == course_dataframe[j + match_offset, increment_match]) {
+      j = j + 1
+      next
+    }
+    for(column in match_item){
+      i = i + 1
+      if(grepl(column, item)){
+        if(vector_type == "logical")
+          columns[[i]][j] <- TRUE
+        else
+          columns[[i]][j] <- item
+        if(break_if_match){
+          break
+        }
+      }
+    }
+  }
+  
+  seperate <- data.frame(columns)
+  colnames(seperate) <- column_name
+  course_dataframe <- cbind.data.frame(course_dataframe, seperate)
+  return(course_dataframe)
+}
+
+seperate_information_single <- function(match_item, column_name, web_link, node, course_dataframe, vector_type, break_if_match){
+  information <- read_html(web_link) %>% html_nodes(node) %>% html_text() %>% str_squish() %>% stri_remove_empty()
+  columns <- vector(mode = vector_type, length = nrow(course_dataframe))
+  j = 0
+  for(item in information){
+    j = j + 1
+    for(column in match_item){
+      if(grepl(column, item)){
+        if(vector_type == "logical")
+          columns[j] <- TRUE
+        else
+          columns[j] <- column
+        if(break_if_match)
+          break
+      }
+    }
+  }
+  seperate <- data.frame(columns)
+  colnames(seperate) <- column_name
+  course_dataframe <- cbind.data.frame(course_dataframe, seperate)
+  return(course_dataframe)
+}
+
+# Get Course Requirements ####
+web_link <-
+  "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
 
 waterloo_course_requirements <-
   get_text_dataframe(
@@ -15,75 +117,59 @@ waterloo_course_requirements <-
     "#ctl00_contentMain_lblContent ul ul a"
   )
 
+number_of_courses <- nrow(waterloo_course_requirements)
+
 colnames(waterloo_course_requirements) <- c("Course Code")
 
-# TODO: Try putting into a list of list
-
-# Get Categories
-
-web_link <-
-  "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
+# Get Categories ####
 
 # Pull strings for categories (like requirement v on degree navigator)
-category_nodes <-
+
+# Html Nodes for the categories
+category_html_nodes <-
   read_html(web_link) %>% html_elements(xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li")
-category_text <-
-  vector(mode = "character", length = length(category_nodes))
-test1 <-
-  read_html(web_link) %>% html_elements(xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li[1]/text()") %>% html_text() %>% str_squish()
+
+number_of_categories <- length(category_html_nodes)
+
+# Descriptions of Categories
+category_description <-
+  vector(mode = "character", length = number_of_categories)
+
+# Gets descriptions of categories base on if they have sublists or not
 i <- 1
-for (item in category_nodes) {
+for (item in category_html_nodes) {
   if (grepl("ul", item))
-    category_text[i] <-
+    category_description[i] <-
       read_html(web_link) %>% html_elements(xpath =  paste0(
         "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li[",
         i,
         "]/text()"
       )) %>% html_text() %>% str_squish()
   else
-    category_text[i] <-
+    category_description[i] <-
       read_html(web_link) %>% html_elements(xpath = paste0("//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li[", i, "]")) %>% html_text() %>% str_squish()
   i = i + 1
 }
 
-category_names <-
-  c(
-    "Category 1",
-    "Category 2",
-    "Category 3",
-    "Category 4",
-    "Category 5",
-    "Category 6",
-    "Category 7",
-    "Category 8"
-  )
+category_names <- get_item_vector("Category", number_of_categories)
 
-requirement_categories_courses <-
-  vector(mode = "character",
-         length = nrow(waterloo_course_requirements))
+course_category <- vector(mode = "character", length = number_of_courses)
 
-category_description_courses <-
-  vector(mode = "character",
-         length = nrow(waterloo_course_requirements))
+course_category_description <- vector(mode = "character", length = number_of_courses)
 
-category_is_used <-
-  vector(mode = "logical", length = length(category_text))
+category_is_used <- vector(mode = "logical", length = number_of_categories)
 
-courses <- vector(mode = "character")
+course_code <- vector(mode = "character", length = number_of_courses)
 
-decsription_for_general_requirement <- vector(mode = "character")
-decsription_for_general_requirement_element <-
-  vector(mode = "numeric")
+general_requirement_description <- vector(mode = "character")
+general_requirement_index <- vector(mode = "numeric")
 
 # Loop using html tags
-n <- as.numeric(length(category_text))
 i <- 1
 j <- 1
 k <- 0
 
-# test1 <- read_html(web_link) %>% html_elements(xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li/ul/li") %>% html_text() %>% str_squish()
-# Filter categories by html layout instead of string matching
-while (i <= n) {
+while (i <= number_of_categories) {
   courses_in_category <-
     read_html(web_link) %>% html_nodes(paste0(
       "#ctl00_contentMain_lblContent > ul > li:nth-child(",
@@ -93,7 +179,7 @@ while (i <= n) {
   for (course in courses_in_category) {
     k <- k + 1
     if (!grepl("[0-9]", course)) {
-      decsription_for_general_requirement[length(decsription_for_general_requirement) + 1] <-
+      general_requirement_description[length(general_requirement_description) + 1] <-
         read_html(web_link) %>% html_node(
           paste0(
             "#ctl00_contentMain_lblContent > ul > li:nth-child(" ,
@@ -103,11 +189,11 @@ while (i <= n) {
             ")"
           )
         ) %>% html_text() %>% str_squish()
-      decsription_for_general_requirement_element <- j - 1
+      general_requirement_index <- j - 1
     }
-    courses[j] <- course
-    requirement_categories_courses[j] <- category_names[i]
-    category_description_courses[j] <- category_text[i]
+    course_code[j] <- course
+    course_category[j] <- category_names[i]
+    course_category_description[j] <- category_description[i]
     category_is_used[i] <- TRUE
     j = j + 1
   }
@@ -116,18 +202,18 @@ while (i <= n) {
 }
 
 course_categories <-
-  data.frame(courses,
-             requirement_categories_courses,
-             category_description_courses)
+  data.frame(course_code,
+             course_category,
+             course_category_description)
 colnames(course_categories) <-
   c("Course Code", "Category", "Category Requirement")
-
-# Function to scan for category, and append category header if item is not found
 
 waterloo_course_requirements <-
   merge(waterloo_course_requirements, course_categories, by = "Course Code")
 
-# Get courses
+# Get Course Information #### 
+
+# TODO: Change to use get_text_xpath(cs_link, "/html/body/main/center[8]/div/div/em")
 compsci_courses_waterloo <-
   get_text_dataframe(
     "http://ugradcalendar.uwaterloo.ca/courses/CS",
@@ -411,10 +497,10 @@ requirements <-
 # TODO: Add courses of any level categories to data frame
 i <- 1
 other_frame <- NULL
-for (item in decsription_for_general_requirement_element) {
+for (item in general_requirement_index) {
   course_code <- waterloo_course_requirements$`Course Code`[item]
   course_name <- "Other"
-  course_description <- decsription_for_general_requirement[i]
+  course_description <- general_requirement_description[i]
   category <- waterloo_course_requirements$Category[item]
   category_requirement <-
     waterloo_course_requirements$`Category Requirement`[item]
@@ -476,12 +562,14 @@ for (item in decsription_for_general_requirement_element) {
 # TODO: Find a way to generalize categories of any level
 i <- 1
 for (item in category_is_used) {
+  # TODO: rep NA to get a repeating empty vector of length rep(NA, ncol(df))
+  # https://www.geeksforgeeks.org/how-to-insert-blank-row-into-dataframe-in-r/
   if (!item) {
     course_code <- "Category Requirement"
     course_name <- "Other Requirement"
-    course_description <- category_text[i]
+    course_description <- category_description[i]
     category <- category_names[i]
-    category_requirement <- category_text[i]
+    category_requirement <- category_description[i]
     prerequisite <- NA
     antirequisite <- NA
     corequisite <- NA
