@@ -4,8 +4,8 @@ library(dplyr)
 library(stringr)
 library(stringi)
 
-get_course_dataframe <- function(course_description_link, ...){
-  
+get_text_dataframe <- function(course_description_link, ...){
+  # Takes an html link and a list of nodes, and returns the text from the list of nodes as a dataframe
   nodes <- list(...)
   course_information <- NULL
   for (item in nodes){
@@ -16,9 +16,37 @@ get_course_dataframe <- function(course_description_link, ...){
   return(data.frame(course_information))
 }
 
+get_text_css <- function(html_link, node){
+  # Returns the text from the specified css node in a html link
+  return(read_html(html_link) %>% html_nodes(node) %>% html_text() %>% str_squish())
+}
+
+get_text_xpath <- function(html_link, path){
+  # Returns the text from the specified xpath node in a html link
+  return(read_html(html_link) %>% html_elements(xpath = path) %>% html_text() %>% str_squish())
+}
+
+get_nodes_css <- function(html_link, node){
+  # Returns the specified css nodes from the given link
+  return(read_html(html_link) %>% html_nodes(node))
+}
+
+get_nodes_xpath <- function(html_link, path){
+  return(read_html(html_link) %>% html_elements(xpath = path))
+}
+
+get_item_vector <- function(item_name, n){
+  # Returns a vector of the form item_name i (ie Category 1) where n is the length of the vector
+  item_vector <- vector(mode = "character", length = n)
+  i <- 1
+  while(i <= n){
+    item_vector[i] <- paste(item_name, i, " ")
+    i + i + 1
+  }
+}
+
 seperate_information <- function(match_item, column_name, web_link, node, course_dataframe, vector_type, break_if_match){
   information <- read_html(web_link) %>% html_nodes(node) %>% html_text() %>% str_squish() %>% stri_remove_empty()
-  
   columns <- list()
   i = 1
   for(item in match_item){
@@ -111,32 +139,5 @@ seperate_information_single <- function(match_item, column_name, web_link, node,
 }
 
 # TODO: Change this to use html tags instead of regex matching
-get_requirement_categories <- function(web_link, node, category_type){
-  info <- read_html(web_link) %>% html_nodes(node) %>% html_text() %>% str_squish()
-  category <- NULL
-  number_from_category <- NULL
-  i = 0
-  j = 1
-  num <- NULL
-  b <- FALSE
-  for(item in info){
-    for(type in category_type){
-      if(grepl(type, item)){
-        num <- type
-        b <- TRUE
-        break
-      }
-    }
-    if(b){
-      b <- FALSE
-      i = i + 1
-    }else{
-      category[j] <- paste("Category", i, sep = " ")
-      number_from_category[j] <- num
-      j = j + 1
-    }
-  }
-  return(data.frame(category, number_from_category))
-}
 
 # TODO: identify by type of bullet point instead of string

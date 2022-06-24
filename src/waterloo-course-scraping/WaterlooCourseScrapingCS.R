@@ -13,7 +13,7 @@ source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 academic_calander_link <-
   "http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1"
 course_requirements_waterloo <-
-  get_course_dataframe(academic_calander_link,
+  get_text_dataframe(academic_calander_link,
                        "#ctl00_contentMain_lblContent li a",
                        "li li")
 colnames(course_requirements_waterloo) <-
@@ -40,7 +40,7 @@ course_requirements_waterloo <-
 
 # Get courses by subject
 compsci_courses_waterloo <-
-  get_course_dataframe(
+  get_text_dataframe(
     "http://ugradcalendar.uwaterloo.ca/courses/CS",
     ".divTableCell:nth-child(1) strong",
     ".colspan-2 strong",
@@ -51,7 +51,7 @@ colnames(compsci_courses_waterloo) <-
   c('Course Code', 'Course Name', 'Course Description')
 
 math_courses_waterloo <-
-  get_course_dataframe(
+  get_text_dataframe(
     "http://ugradcalendar.uwaterloo.ca/courses/MATH",
     ".divTableCell:nth-child(1) strong",
     ".colspan-2 strong",
@@ -62,7 +62,7 @@ colnames(math_courses_waterloo) <-
   c('Course Code', 'Course Name', 'Course Description')
 
 stat_courses_waterloo <-
-  get_course_dataframe(
+  get_text_dataframe(
     "http://ugradcalendar.uwaterloo.ca/courses/STAT",
     ".divTableCell:nth-child(1) strong",
     ".colspan-2 strong",
