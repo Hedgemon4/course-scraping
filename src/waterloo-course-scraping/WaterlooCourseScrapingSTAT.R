@@ -11,6 +11,7 @@ source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
 # TODO List ####
 # TODO: Spell checking library if needed (stringdist)
+# TODO: Find a better way to scrape credits
 
 # Functions ####
 seperate_information <-
@@ -89,7 +90,7 @@ get_other_course_info <- function(link, n) {
   return(data.frame(prereq, antireq, coreq, note, other))
 }
 
-# Get Course Requirements ####
+# Program Requirements ####
 
 web_link <-
   "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
@@ -104,7 +105,7 @@ number_of_courses <- nrow(waterloo_course_requirements)
 
 colnames(waterloo_course_requirements) <- c("Course Code")
 
-# Get Categories ####
+# Category Requirements ####
 
 # Pull strings for categories (like requirement v on degree navigator)
 
@@ -212,7 +213,7 @@ colnames(course_categories) <-
 waterloo_course_requirements <-
   merge(waterloo_course_requirements, course_categories, by = "Course Code")
 
-# Get Course Information ####
+# Course Information ####
 
 cs_courses_waterloo <-
   get_text_dataframe(
@@ -297,7 +298,6 @@ mthel_courses_waterloo["Course Code"] <-
   gsub(clean_from_data, "", mthel_courses_waterloo$`Course Code`) %>% str_squish()
 
 # Get other information using html codes
-# TODO: Change to use get_text_xpath(cs_link, "/html/body/main/center[8]/div/div/em")
 
 other_info_column_names <-
   c("Prerequisite",
