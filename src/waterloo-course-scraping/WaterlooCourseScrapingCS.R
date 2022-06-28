@@ -9,6 +9,8 @@ library(stringi)
 # Source for functions
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
+# TODO: Fix this code
+
 # Get Course Requirements
 academic_calander_link <-
   "http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1"
