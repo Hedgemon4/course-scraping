@@ -5,7 +5,7 @@ library(stringr)
 library(stringi)
 
 get_text_dataframe <- function(course_description_link, ...) {
-  # Takes an html link and a list of nodes, and returns the text from the list 
+  # Takes an html link and a list of nodes, and returns the text from the list
   # of nodes as a dataframe with every node becoming a column
   nodes <- list(...)
   course_information <- NULL

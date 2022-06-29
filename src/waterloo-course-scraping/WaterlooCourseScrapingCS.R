@@ -10,7 +10,6 @@ library(stringi)
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
 # TODO List ####
-# TODO: Find a better way to scrape credits
 
 # Functions ####
 seperate_information <-
@@ -93,17 +92,20 @@ get_other_course_info <- function(link, n) {
 web_link <-
   "http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1"
 
-web_page <- read_html("http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1")
-  
+web_page <-
+  read_html("http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1")
+
 waterloo_course_requirements <-
   get_text_dataframe(web_link,
-                       "#ctl00_contentMain_lblContent ul ul a")
+                     "#ctl00_contentMain_lblContent ul ul a")
 
 colnames(waterloo_course_requirements) <- "Course Code"
 
 # Category Requirements ####
 
-category_description <- get_text_xpath(web_link, "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li/text()")
+category_description <-
+  get_text_xpath(web_link,
+                 "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li/text()")
 
 number_of_categories <- length(category_description)
 
@@ -273,64 +275,45 @@ stat_courses_waterloo <-
   )
 
 # Scrape Credit Data
-# TODO: Find a better way to scrape credits
-# credit_value <- "0.00|0.25|0.50|2.50"
-# name <- c("Credit Amount")
-# 
-# cs_courses_waterloo <-
-#   seperate_information(
-#     credit_value,
-#     name,
-#     "http://ugradcalendar.uwaterloo.ca/courses/CS",
-#     ".divTableCell:nth-child(1) strong",
-#     cs_courses_waterloo,
-#     "character",
-#     TRUE
-#   )
-# 
-# math_courses_waterloo <-
-#   seperate_information(
-#     credit_value,
-#     name,
-#     "http://ugradcalendar.uwaterloo.ca/courses/MATH",
-#     ".divTableCell:nth-child(1) strong",
-#     math_courses_waterloo,
-#     "character",
-#     TRUE
-#   )
-# 
-# stat_courses_waterloo <-
-#   seperate_informatio(
-#     credit_value,
-#     name,
-#     "http://ugradcalendar.uwaterloo.ca/courses/STAT",
-#     ".divTableCell:nth-child(1) strong",
-#     stat_courses_waterloo,
-#     "character",
-#     TRUE
-#   )
+
+cs_course_credits <- get_text_css(
+  "http://ugradcalendar.uwaterloo.ca/courses/CS",
+  ".divTableCell:nth-child(1) strong"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
+colnames(cs_course_credits) <- "Course Credits"
+cs_courses_waterloo <- cbind(cs_courses_waterloo, cs_course_credits)
+
+math_course_credits <- get_text_css(
+  "http://ugradcalendar.uwaterloo.ca/courses/MATH",
+  ".divTableCell:nth-child(1) strong"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
+colnames(math_course_credits) <- "Course Credits"
+math_courses_waterloo <-
+  cbind(math_courses_waterloo, math_course_credits)
+
+stat_course_credits <- get_text_css(
+  "http://ugradcalendar.uwaterloo.ca/courses/STAT",
+  ".divTableCell:nth-child(1) strong"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
+colnames(stat_course_credits) <- "Course Credits"
+stat_courses_waterloo <-
+  cbind(stat_courses_waterloo, stat_course_credits)
 
 # Merge Data ####
 cs <-
-  merge(
-    waterloo_course_requirements,
-    cs_courses_waterloo,
-    by = c("Course Code")
-  )
+  merge(waterloo_course_requirements,
+        cs_courses_waterloo,
+        by = c("Course Code"))
 
 math <-
-  merge(
-    waterloo_course_requirements,
-    math_courses_waterloo,
-    by = c("Course Code")
-  )
+  merge(waterloo_course_requirements,
+        math_courses_waterloo,
+        by = c("Course Code"))
 
 stat <-
-  merge(
-    waterloo_course_requirements,
-    stat_courses_waterloo,
-    by = c("Course Code")
-  )
+  merge(waterloo_course_requirements,
+        stat_courses_waterloo,
+        by = c("Course Code"))
 
 courses <- rbind(cs, math, stat)
 
@@ -342,6 +325,7 @@ requirements <-
     "Course Description",
     "Category",
     "Category Requirement",
+    "Course Credits",
     "Prerequisite",
     "Antirequisite",
     "Corequisite",

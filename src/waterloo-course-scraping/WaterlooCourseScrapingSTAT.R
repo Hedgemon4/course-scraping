@@ -11,7 +11,6 @@ source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
 # TODO List ####
 # TODO: Spell checking library if needed (stringdist)
-# TODO: Find a better way to scrape credits
 
 # Functions ####
 seperate_information <-
@@ -426,6 +425,54 @@ mthel_courses_waterloo <-
     FALSE
   )
 
+# Get Course Credits
+cs_course_credits <- get_text_css(
+  "http://ugradcalendar.uwaterloo.ca/courses/CS",
+  ".divTableCell:nth-child(1) strong"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
+colnames(cs_course_credits) <- "Course Credits"
+cs_courses_waterloo <- cbind(cs_courses_waterloo, cs_course_credits)
+
+math_course_credits <- get_text_css(
+  "http://ugradcalendar.uwaterloo.ca/courses/MATH",
+  ".divTableCell:nth-child(1) strong"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
+colnames(math_course_credits) <- "Course Credits"
+math_courses_waterloo <-
+  cbind(math_courses_waterloo, math_course_credits)
+
+stat_course_credits <- get_text_css(
+  "http://ugradcalendar.uwaterloo.ca/courses/STAT",
+  ".divTableCell:nth-child(1) strong"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
+colnames(stat_course_credits) <- "Course Credits"
+stat_courses_waterloo <-
+  cbind(stat_courses_waterloo, stat_course_credits)
+
+engl_course_credits <- get_text_css(
+  "http://ugradcalendar.uwaterloo.ca/courses/ENGL",
+  ".divTableCell:nth-child(1) strong"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
+colnames(engl_course_credits) <- "Course Credits"
+engl_courses_waterloo <-
+  cbind(engl_courses_waterloo, engl_course_credits)
+
+mthel_course_credits <- get_text_css(
+  "http://ugradcalendar.uwaterloo.ca/courses/MTHEL",
+  ".divTableCell:nth-child(1) strong"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
+colnames(mthel_course_credits) <- "Course Credits"
+mthel_courses_waterloo <-
+  cbind(mthel_courses_waterloo, mthel_course_credits)
+
+amath_course_credits <- get_text_css(
+  "http://ugradcalendar.uwaterloo.ca/courses/AMATH",
+  ".divTableCell:nth-child(1) strong"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
+colnames(amath_course_credits) <- "Course Credits"
+amath_courses_waterloo <-
+  cbind(amath_courses_waterloo, amath_course_credits)
+
 amath <-
   merge(waterloo_course_requirements, amath_courses_waterloo, by = "Course Code")
 math <-
@@ -447,6 +494,7 @@ requirements <-
     "Course Description",
     "Category",
     "Category Requirement",
+    "Course Credits",
     "Prerequisite",
     "Antirequisite",
     "Corequisite",
