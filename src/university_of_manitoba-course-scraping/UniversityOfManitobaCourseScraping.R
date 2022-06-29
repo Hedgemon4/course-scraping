@@ -33,8 +33,21 @@ course_description <- vector(mode = "character", length = length(course_info_lin
 prereq <- vector(mode = "character", length = length(course_info_links))
 coreq <- vector(mode = "character", length = length(course_info_links))
 attributes <- vector(mode = "character", length = length(course_info_links))
-eqiv <- vector(mode = "character", length = length(course_info_links))
+equiv <- vector(mode = "character", length = length(course_info_links))
 exclusive <- vector(mode = "character", length = length(course_info_links))
+
+i <- 1
+for(item in course_info_links){
+  course_link <- paste0(courses_main_link, course_info_links[i])
+  course_information <- read_html(course_link) %>% html_nodes(".courseblockextra") %>% html_text() %>% str_squish()
+  course_description[i] <- course_information[1]
+  equiv[i] <- paste(grep("Equiv To:", course_information, value = TRUE), collapse = "")
+  exclusive[i] <- paste(grep("Mutually Exclusive:", course_information, value = TRUE), collapse = "")
+  attributes[i] <- paste(grep("Attributes:", course_information, value = TRUE), collapse = "")
+  i = i + 1
+}
+
+course_info <- data.frame(course_codes, course_description, equiv, exclusive, attributes)
 
 
 information <- html_nodes(web_page, "#degreerequirementstextcontainer .codecol") %>% html_text()
