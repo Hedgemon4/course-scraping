@@ -57,7 +57,9 @@ for(item in course_info_links){
 }
 
 course_info <- data.frame(course_codes, course_name, course_description, course_credit, prereq, coreq, equiv, exclusive, attributes)
-
+colnames(course_info) <- c("Course Code", "Course Name", "Course Description", "Course Credit", "Prerequisite", "Corequisite", "Equivalency", "Mutually Exclusive", "Attributes")
 information <- html_nodes(web_page, "#degreerequirementstextcontainer .codecol") %>% html_text()
 
 program_table <- html_nodes(web_page, "#degreerequirementstextcontainer > table.sc_plangrid") %>% html_table() %>% .[[1]]
+colnames(program_table) <- c("Course Code", "Course Name", "Course Credit")
+test1 <-filter(program_table, 'Course Credit' == '3')
