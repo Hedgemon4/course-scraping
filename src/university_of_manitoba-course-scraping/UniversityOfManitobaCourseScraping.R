@@ -5,6 +5,7 @@ library(rvest)
 library(dplyr)
 library(stringr)
 library(stringi)
+library(tidyverse)
 
 # Source for functions
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
@@ -67,7 +68,12 @@ core_requirements <- program_table %>% filter(str_detect(code, "COMP|MATH|DATA|S
 core_requirement_category <- rep("Core", nrow(core_requirements))
 core_requirement_category_description <- rep("Core Requirement", nrow(core_requirements))
 core_requirements <- cbind(core_requirements, core_requirement_category, core_requirement_category_description)
+colnames(core_requirements) <- c("Course Code", "Category", "Category Description")
 
 general_requirements <- program_table %>% filter(str_detect(code, 'credit'), str_detect(code, 'above|from:', negate = TRUE)) %>% select(code, credit)
-general_requirement_category <- rep("General Requirement", nrow(general_requirements))
-general_requirements <- cbind(general_requirements$code)
+general_requirement_category <- rep("General", nrow(general_requirements))
+general_requirement_code <- rep("General Requirement", nrow(general_requirements))
+general_requirement_empty <- rep(NA, nrow(general_requirements))
+general_requirements <- cbind(general_requirement_code, general_requirement_category, general_requirements)
+add_
+colnames(general_requirements) <- cbind("Course Code", "Category", "Category Description", "Credit Amount")
