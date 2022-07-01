@@ -61,5 +61,13 @@ colnames(course_info) <- c("Course Code", "Course Name", "Course Description", "
 information <- html_nodes(web_page, "#degreerequirementstextcontainer .codecol") %>% html_text()
 
 program_table <- html_nodes(web_page, "#degreerequirementstextcontainer > table.sc_plangrid") %>% html_table() %>% .[[1]]
-colnames(program_table) <- c("Course Code", "Course Name", "Course Credit")
-test1 <-filter(program_table, 'Course Credit' == '3')
+colnames(program_table) <- c("code", "name", "credit")
+
+core_requirements <- program_table %>% filter(str_detect(code, "COMP|MATH|DATA|STAT"), credit == '3') %>% select(code)
+core_requirement_category <- rep("Core", nrow(core_requirements))
+core_requirement_category_description <- rep("Core Requirement", nrow(core_requirements))
+core_requirements <- cbind(core_requirements, core_requirement_category, core_requirement_category_description)
+
+general_requirements <- program_table %>% filter(str_detect(code, 'credit'), str_detect(code, 'above|from:', negate = TRUE)) %>% select(code, credit)
+general_requirement_category <- rep("General Requirement", nrow(general_requirements))
+general_requirements <- cbind(general_requirements$code)
