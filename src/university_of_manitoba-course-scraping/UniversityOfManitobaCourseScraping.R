@@ -219,7 +219,10 @@ coop_requirements <-
 
 # Other Requirements
 # TODO: Finish this code block and combine with other
-other_requirements_table <- program_table %>% filter(credit == "" & str_detect(code, "COMP|MATH|DATA|STAT") | str_detect(code, "from:"))
+other_requirements_table <-
+  program_table %>% filter(credit == "" &
+                             str_detect(code, "COMP|MATH|DATA|STAT") |
+                             str_detect(code, "from:"))
 i <- 0
 j <- 1
 other_requirement_codes <- vector(mode = "character")
@@ -227,8 +230,8 @@ other_requirement_category <- vector(mode = "character")
 other_requirement_description <- vector(mode = "character")
 category_description <- ""
 category <- ""
-for(item in other_requirements_table$code){
-  if(!grepl("COMP|MATH|DATA|STAT", item)){
+for (item in other_requirements_table$code) {
+  if (!grepl("COMP|MATH|DATA|STAT", item)) {
     i = i + 1
     category <- paste0("Other Group ", i)
     category_description <- item
@@ -240,8 +243,32 @@ for(item in other_requirements_table$code){
   }
 }
 
-other_requirements <- data.frame(other_requirement_codes, other_requirement_category, other_requirement_description)
+other_requirements <-
+  data.frame(
+    other_requirement_codes,
+    other_requirement_category,
+    other_requirement_description
+  )
+colnames(other_requirements) <-
+  c("Course Code", "Category", "Category Description")
+other_requirements <-
+  merge.data.frame(other_requirements, course_info) %>% select(
+    "Course Code",
+    "Course Name",
+    "Course Description",
+    "Category",
+    "Category Description",
+    "Credit Amount",
+    "Prerequisite",
+    "Corequisite",
+    "Equivalency",
+    "Mutually Exclusive",
+    "Attributes"
+  )
 
 # Merge Data ####
 program_requirements <-
-  rbind(program_requirements, general_requirements, coop_requirements)
+  rbind(program_requirements,
+        general_requirements,
+        coop_requirements,
+        other_requirements)
