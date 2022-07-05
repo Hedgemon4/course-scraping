@@ -425,19 +425,19 @@ mthel_courses_waterloo <-
     FALSE
   )
 
-# Get Course Credits
+# Get Credit Amount
 cs_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/CS",
   ".divTableCell:nth-child(1) strong"
 ) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(cs_course_credits) <- "Course Credits"
+colnames(cs_course_credits) <- "Credit Amount"
 cs_courses_waterloo <- cbind(cs_courses_waterloo, cs_course_credits)
 
 math_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/MATH",
   ".divTableCell:nth-child(1) strong"
 ) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(math_course_credits) <- "Course Credits"
+colnames(math_course_credits) <- "Credit Amount"
 math_courses_waterloo <-
   cbind(math_courses_waterloo, math_course_credits)
 
@@ -445,7 +445,7 @@ stat_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/STAT",
   ".divTableCell:nth-child(1) strong"
 ) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(stat_course_credits) <- "Course Credits"
+colnames(stat_course_credits) <- "Credit Amount"
 stat_courses_waterloo <-
   cbind(stat_courses_waterloo, stat_course_credits)
 
@@ -453,7 +453,7 @@ engl_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/ENGL",
   ".divTableCell:nth-child(1) strong"
 ) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(engl_course_credits) <- "Course Credits"
+colnames(engl_course_credits) <- "Credit Amount"
 engl_courses_waterloo <-
   cbind(engl_courses_waterloo, engl_course_credits)
 
@@ -461,7 +461,7 @@ mthel_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/MTHEL",
   ".divTableCell:nth-child(1) strong"
 ) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(mthel_course_credits) <- "Course Credits"
+colnames(mthel_course_credits) <- "Credit Amount"
 mthel_courses_waterloo <-
   cbind(mthel_courses_waterloo, mthel_course_credits)
 
@@ -469,7 +469,7 @@ amath_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/AMATH",
   ".divTableCell:nth-child(1) strong"
 ) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(amath_course_credits) <- "Course Credits"
+colnames(amath_course_credits) <- "Credit Amount"
 amath_courses_waterloo <-
   cbind(amath_courses_waterloo, amath_course_credits)
 
@@ -494,7 +494,7 @@ requirements <-
     "Course Description",
     "Category",
     "Category Requirement",
-    "Course Credits",
+    "Credit Amount",
     "Prerequisite",
     "Antirequisite",
     "Corequisite",
@@ -540,3 +540,13 @@ for (item in category_is_used) {
   }
   i <- i + 1
 }
+
+# Write CSV Files ####
+
+# write.csv(requirements, "University of Waterloo Statistics Program Requirements.csv")
+# write.csv(cs_courses_waterloo, "University of Waterloo Computer Science Course Calendar.csv")
+# write.csv(amath_courses_waterloo, "University of Waterloo Applied Mathematics Course Calendar.csv")
+# write.csv(mthel_courses_waterloo, "University of Waterloo Mathematics Electives Course Calendar.csv")
+# write.csv(engl_courses_waterloo, "University of Waterloo English Course Calendar.csv")
+# write.csv(math_courses_waterloo, "University of Waterloo Mathematics Course Calendar.csv")
+# write.csv(stat_courses_waterloo, "University of Waterloo Statistics Course Calendar.csv")
