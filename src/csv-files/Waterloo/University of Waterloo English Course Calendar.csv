@@ -1,4 +1,4 @@
-"","Course Code","Course Name","Course Description","Prerequisite","Antirequisite","Corequisite","Note","Other Information","Lecture","Lab","Test Slot","Tutorial","Project","Reading","Studio","Course Credits"
+"","Course Code","Course Name","Course Description","Prerequisite","Antirequisite","Corequisite","Note","Other Information","Lecture","Lab","Test Slot","Tutorial","Project","Reading","Studio","Credit Amount"
 "1","ENGL 100A","Fiction","An introduction to fiction through the detailed examination of a range of novels and/or short stories.","","","",""," Also offered at Renison University College",TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,"0.50"
 "2","ENGL 100B","Poetry","An introduction to poetry through a detailed examination of a range of poetic texts.","","","",""," Also offered at Renison University College",TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,"0.50"
 "3","ENGL 100C","Drama","An introduction to dramatic literature through the detailed examination of a range of dramatic texts.","","","",""," Also offered at Renison University College",TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,"0.50"

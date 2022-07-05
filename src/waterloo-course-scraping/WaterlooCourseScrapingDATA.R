@@ -280,14 +280,14 @@ cs_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/CS",
   ".divTableCell:nth-child(1) strong"
 ) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(cs_course_credits) <- "Course Credits"
+colnames(cs_course_credits) <- "Credit Amount"
 cs_courses_waterloo <- cbind(cs_courses_waterloo, cs_course_credits)
 
 math_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/MATH",
   ".divTableCell:nth-child(1) strong"
 ) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(math_course_credits) <- "Course Credits"
+colnames(math_course_credits) <- "Credit Amount"
 math_courses_waterloo <-
   cbind(math_courses_waterloo, math_course_credits)
 
@@ -295,7 +295,7 @@ stat_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/STAT",
   ".divTableCell:nth-child(1) strong"
 ) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(stat_course_credits) <- "Course Credits"
+colnames(stat_course_credits) <- "Credit Amount"
 stat_courses_waterloo <-
   cbind(stat_courses_waterloo, stat_course_credits)
 
@@ -325,7 +325,7 @@ requirements <-
     "Course Description",
     "Category",
     "Category Requirement",
-    "Course Credits",
+    "Credit Amount",
     "Prerequisite",
     "Antirequisite",
     "Corequisite",
@@ -340,4 +340,9 @@ requirements <-
     "Studio"
   )]
 
-View(requirements)
+# Write CSV Files ####
+
+# write.csv(requirements, "University of Waterloo Data Science Program Requirements.csv")
+# write.csv(cs_courses_waterloo, "University of Waterloo Computer Science Course Calendar.csv")
+# write.csv(math_courses_waterloo, "University of Waterloo Mathematics Course Calendar.csv")
+# write.csv(stat_courses_waterloo, "University of Waterloo Statistics Course Calendar.csv")
