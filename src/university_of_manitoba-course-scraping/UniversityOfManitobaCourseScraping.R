@@ -11,9 +11,6 @@ library(tidyverse)
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
 # TODO List ####
-# TODO: Use course lists to get categories and category requirements
-# TODO: Finish getting other requirements
-# TODO: Tidy up code
 
 # Program Requirements ####
 web_link <-
@@ -42,7 +39,7 @@ course_credit <-
   vector(mode = "character", length = number_of_courses)
 prereq <- vector(mode = "character", length = number_of_courses)
 coreq <- vector(mode = "character", length = number_of_courses)
-attributes <- vector(mode = "character", length = number_of_courses)
+notes <- vector(mode = "character", length = number_of_courses)
 equiv <- vector(mode = "character", length = number_of_courses)
 exclusive <- vector(mode = "character", length = number_of_courses)
 
@@ -62,7 +59,7 @@ for (item in course_info_links) {
   exclusive[i] <-
     paste(grep("Mutually Exclusive:", course_information, value = TRUE),
           collapse = "")
-  attributes[i] <-
+  notes[i] <-
     paste(grep("Attributes:", course_information, value = TRUE),
           collapse = "")
   prcr <-
@@ -82,6 +79,8 @@ for (item in course_info_links) {
   i = i + 1
 }
 
+labs <- grepl("lab|Lab", course_description)
+
 course_info <-
   data.frame(
     course_codes,
@@ -92,7 +91,8 @@ course_info <-
     coreq,
     equiv,
     exclusive,
-    attributes
+    notes,
+    labs
   )
 
 colnames(course_info) <-
@@ -104,8 +104,9 @@ colnames(course_info) <-
     "Prerequisite",
     "Corequisite",
     "Equivalency",
-    "Mutually Exclusive",
-    "Attributes"
+    "Antirequisite",
+    "Note", 
+    "Lab"
   )
 
 information <-
@@ -146,8 +147,9 @@ program_requirements <-
     "Prerequisite",
     "Corequisite",
     "Equivalency",
-    "Mutually Exclusive",
-    "Attributes"
+    "Antirequisite",
+    "Note",
+    "Lab"
   )
 
 # General Requirements
@@ -171,6 +173,7 @@ general_requirements <-
     general_requirement_empty,
     general_requirement_empty,
     general_requirement_empty,
+    general_requirement_empty,
     general_requirement_empty
   )
 
@@ -185,8 +188,9 @@ colnames(general_requirements) <-
     "Prerequisite",
     "Corequisite",
     "Equivalency",
-    "Mutually Exclusive",
-    "Attributes"
+    "Antirequisite",
+    "Note",
+    "Lab"
   )
 
 # Co-Op Requirements
@@ -213,8 +217,9 @@ coop_requirements <-
     "Prerequisite",
     "Corequisite",
     "Equivalency",
-    "Mutually Exclusive",
-    "Attributes"
+    "Antirequisite",
+    "Note",
+    "Lab"
   )
 
 # Other Requirements
@@ -262,8 +267,9 @@ other_requirements <-
     "Prerequisite",
     "Corequisite",
     "Equivalency",
-    "Mutually Exclusive",
-    "Attributes"
+    "Antirequisite",
+    "Note",
+    "Lab"
   )
 
 # Merge Data ####
@@ -272,3 +278,6 @@ program_requirements <-
         general_requirements,
         coop_requirements,
         other_requirements)
+# Output CSV ####
+# write.csv(program_requirements, "University of Manitoba Data Science Program Requirements.csv")
+# write.csv(course_info, "University of Manitoba Data Science Required Courses.csv")
