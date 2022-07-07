@@ -169,6 +169,7 @@ second_year_requirements <- grep("Second", other_requirement_information, value 
 upper_year_requirements <- html_nodes(program_page, ".field--name-field-completion-requirements li") %>% html_text() %>% str_squish()
 
 # First Year
-test <- str_split(first_year_requirements, "Note") %>% unlist() %>% .[1]
-test1 <- str_extract_all(test, "(CSC|JSC|MAT|STA)([0-9]*)(H|Y)([0-9]*)(\\/)(.*)(CSC|JSC|MAT|STA)([0-9]*)(H|Y)([0-9]*).*") %>% unlist()
-test2 <- str_split(test1, "\\(.*\\,.*\\)") %>% unlist()
+first_year_requirements <-
+  str_split(first_year_requirements, "Note") %>% unlist() %>% .[1] %>%
+  strsplit(year_requirement_categories[1], fixed = TRUE) %>% unlist() %>% .[2] %>%
+  str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>% unlist()
