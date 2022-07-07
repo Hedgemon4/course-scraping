@@ -66,8 +66,10 @@ for (link in course_links) {
   other_course_information <-
     html_nodes(course_page, "#block-fas-content > div > article > div > div") %>%
     html_text() %>% str_squish()
-  other_course_information <-
-    other_course_information[!other_course_information %in% course_descriptions[i]]
+  dupliate_info <- grep(course_descriptions[i], other_course_information, fixed = TRUE)
+  for(dup in dupliate_info){
+    other_course_information <- other_course_information[-dup]
+  }
   prereq[i] <-
     grep("Prerequisite", other_course_information, value = TRUE) %>% paste(collapse = " ")
   coreq[i] <-
@@ -158,3 +160,15 @@ colnames(required_courses) <-
     "Distribution Requirement",
     "Note"
   )
+
+# Program Requirements ####
+year_requirement_categories <- html_nodes(program_page, ".field--name-field-completion-requirements em") %>% html_text() %>% str_squish()
+other_requirement_information <- html_nodes(program_page, ".field--name-field-completion-requirements p") %>% html_text() %>% str_squish()
+first_year_requirements <- grep("First", other_requirement_information, value = TRUE, ignore.case = TRUE)
+second_year_requirements <- grep("Second", other_requirement_information, value = TRUE, ignore.case = TRUE)
+upper_year_requirements <- html_nodes(program_page, ".field--name-field-completion-requirements li") %>% html_text() %>% str_squish()
+
+# First Year
+test <- str_split(first_year_requirements, "Note") %>% unlist() %>% .[1]
+test1 <- str_extract_all(test, "(CSC|JSC|MAT|STA)([0-9]*)(H|Y)([0-9]*)(\\/)(.*)(CSC|JSC|MAT|STA)([0-9]*)(H|Y)([0-9]*).*") %>% unlist()
+test2 <- str_split(test1, "\\(.*\\,.*\\)") %>% unlist()
