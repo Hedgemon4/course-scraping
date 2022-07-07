@@ -14,6 +14,7 @@ source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 # TODO List ####
 # TODO: Figure out how to separate courses into categories
 # TODO: Scrape category requirements
+# TODO: Assign Categories to courses
 
 # Required Courses ####
 program_link <-
@@ -164,12 +165,23 @@ colnames(required_courses) <-
 # Program Requirements ####
 year_requirement_categories <- html_nodes(program_page, ".field--name-field-completion-requirements em") %>% html_text() %>% str_squish()
 other_requirement_information <- html_nodes(program_page, ".field--name-field-completion-requirements p") %>% html_text() %>% str_squish()
-first_year_requirements <- grep("First", other_requirement_information, value = TRUE, ignore.case = TRUE)
-second_year_requirements <- grep("Second", other_requirement_information, value = TRUE, ignore.case = TRUE)
-upper_year_requirements <- html_nodes(program_page, ".field--name-field-completion-requirements li") %>% html_text() %>% str_squish()
+first <- grep("First", other_requirement_information, value = TRUE, ignore.case = TRUE)
+second <- grep("Second", other_requirement_information, value = TRUE, ignore.case = TRUE)
+upper <- html_nodes(program_page, ".field--name-field-completion-requirements li") %>% html_text() %>% str_squish()
 
 # First Year
 first_year_requirements <-
-  str_split(first_year_requirements, "Note") %>% unlist() %>% .[1] %>%
+  str_split(first, "Note") %>% unlist() %>% .[1] %>%
   strsplit(year_requirement_categories[1], fixed = TRUE) %>% unlist() %>% .[2] %>%
+  str_remove("\\(.*is recommended\\)") %>%
   str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>% unlist()
+
+first_year_category <- get_item_vector("First Year Requirement", length(first_year_requirements))
+first_year_category_description <- vector(mode = "character", length = length(first_year_category))
+
+i <- 1
+for(item in first_year_requirements){
+  first_year_category_description[i] <- str_replace_all(item, "\\/", " or") %>%
+    str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_squish() %>% str_replace_all(",", " and")
+  i <- i + 1
+}
