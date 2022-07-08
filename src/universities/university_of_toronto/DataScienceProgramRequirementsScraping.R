@@ -12,9 +12,7 @@ library(stringi)
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
 # TODO List ####
-# TODO: Figure out how to separate courses into categories
-# TODO: Scrape category requirements
-# TODO: Assign Categories to courses
+# TODO: Clean Code
 
 # Required Courses ####
 program_link <-
@@ -192,16 +190,8 @@ first_year_requirements <-
 
 first_year_category <-
   get_item_vector("First Year Category", length(first_year_requirements))
-first_year_category_description <-
-  vector(mode = "character", length = length(first_year_category))
-
-i <- 1
-for (item in first_year_requirements) {
-  first_year_category_description[i] <-
-    str_replace_all(item, "\\/", " or") %>%
-    str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_squish() %>% str_replace_all(",", " and")
-  i <- i + 1
-}
+first_year_category_description <- str_replace_all(first_year_requirements, "\\/", " or") %>%
+  str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_squish() %>% str_replace_all(",", " and")
 
 # Second Year
 second_year_requirements <-
@@ -213,15 +203,8 @@ second_year_requirements <-
 second_year_category <-
   get_item_vector("Second Year Category", length(second_year_requirements))
 second_year_category_description <-
-  vector(mode = "character", length = length(second_year_category))
-
-i <- 1
-for (item in second_year_requirements) {
-  second_year_category_description[i] <-
     str_replace_all(item, "\\/", " or") %>%
     str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_replace_all(",", " and") %>% str_squish()
-  i <- i + 1
-}
 
 # Upper Year
 upper_year_requirements1 <-
@@ -241,6 +224,7 @@ upper_year_category <-
 upper_year_category_description <-
   c(upper_year_requirements1, upper_year_requirements2)
 
+# General Requirements
 general_category <- get_item_vector("General Category", 2)
 
 upper_year_requirements3 <-
@@ -281,6 +265,8 @@ for (item in courses_list) {
   }
   i <- i + 1
 }
+
+# Requirements Dataframe ####
 
 course_requirements_with_categories <-
   data.frame(courses, course_category, course_category_description)
