@@ -190,7 +190,8 @@ first_year_requirements <-
 
 first_year_category <-
   get_item_vector("First Year Category", length(first_year_requirements))
-first_year_category_description <- str_replace_all(first_year_requirements, "\\/", " or") %>%
+first_year_category_description <-
+  str_replace_all(first_year_requirements, "\\/", " or") %>%
   str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_squish() %>% str_replace_all(",", " and")
 
 # Second Year
@@ -203,8 +204,8 @@ second_year_requirements <-
 second_year_category <-
   get_item_vector("Second Year Category", length(second_year_requirements))
 second_year_category_description <-
-    str_replace_all(item, "\\/", " or") %>%
-    str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_replace_all(",", " and") %>% str_squish()
+  str_replace_all(second_year_requirements, "\\/", " or") %>%
+  str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_replace_all(",", " and") %>% str_squish()
 
 # Upper Year
 upper_year_requirements1 <-
@@ -304,6 +305,11 @@ for (item in general_category) {
   general_requirement[1] <- general_category[i]
   general_requirement[4] <- general_category[i]
   general_requirement[5] <- general_category_description[i]
-  program_requirements <- rbind(program_requirements, general_requirement)
+  program_requirements <-
+    rbind(program_requirements, general_requirement)
   i <- i + 1
 }
+
+# Generate CSV Files ####
+# write.csv(general_requirement, "University of Toronto Data Science Program Requirements.csv")
+# write.csv(required_courses, "University of Toronto Data Science Required Courses.csv")
