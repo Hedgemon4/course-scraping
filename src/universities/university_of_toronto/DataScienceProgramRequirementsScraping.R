@@ -67,8 +67,9 @@ for (link in course_links) {
   other_course_information <-
     html_nodes(course_page, "#block-fas-content > div > article > div > div") %>%
     html_text() %>% str_squish()
-  dupliate_info <- grep(course_descriptions[i], other_course_information, fixed = TRUE)
-  for(dup in dupliate_info){
+  dupliate_info <-
+    grep(course_descriptions[i], other_course_information, fixed = TRUE)
+  for (dup in dupliate_info) {
     other_course_information <- other_course_information[-dup]
   }
   prereq[i] <-
@@ -163,11 +164,24 @@ colnames(required_courses) <-
   )
 
 # Program Requirements ####
-year_requirement_categories <- html_nodes(program_page, ".field--name-field-completion-requirements em") %>% html_text() %>% str_squish()
-other_requirement_information <- html_nodes(program_page, ".field--name-field-completion-requirements p") %>% html_text() %>% str_squish()
-first <- grep("First", other_requirement_information, value = TRUE, ignore.case = TRUE)
-second <- grep("Second", other_requirement_information, value = TRUE, ignore.case = TRUE)
-upper <- html_nodes(program_page, ".field--name-field-completion-requirements li") %>% html_text() %>% str_squish()
+year_requirement_categories <-
+  html_nodes(program_page,
+             ".field--name-field-completion-requirements em") %>% html_text() %>% str_squish()
+other_requirement_information <-
+  html_nodes(program_page, ".field--name-field-completion-requirements p") %>% html_text() %>% str_squish()
+first <-
+  grep("First",
+       other_requirement_information,
+       value = TRUE,
+       ignore.case = TRUE)
+second <-
+  grep("Second",
+       other_requirement_information,
+       value = TRUE,
+       ignore.case = TRUE)
+upper <-
+  html_nodes(program_page,
+             ".field--name-field-completion-requirements li") %>% html_text() %>% str_squish()
 
 # First Year
 first_year_requirements <-
@@ -176,59 +190,134 @@ first_year_requirements <-
   str_remove("\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}).is recommended\\)") %>%
   str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>% unlist()
 
-first_year_category <- get_item_vector("First Year Category", length(first_year_requirements))
-first_year_category_description <- vector(mode = "character", length = length(first_year_category))
+first_year_category <-
+  get_item_vector("First Year Category", length(first_year_requirements))
+first_year_category_description <-
+  vector(mode = "character", length = length(first_year_category))
 
 i <- 1
-for(item in first_year_requirements){
-  first_year_category_description[i] <- str_replace_all(item, "\\/", " or") %>%
+for (item in first_year_requirements) {
+  first_year_category_description[i] <-
+    str_replace_all(item, "\\/", " or") %>%
     str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_squish() %>% str_replace_all(",", " and")
   i <- i + 1
 }
 
 # Second Year
 second_year_requirements <-
-  str_split(second, "Note") %>% unlist() %>% .[1] %>% 
+  str_split(second, "Note") %>% unlist() %>% .[1] %>%
   strsplit(year_requirement_categories[2], fixed = TRUE) %>% unlist() %>% .[2] %>%
   str_remove("\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}).is recommended\\)") %>%
   str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>% unlist()
 
-second_year_category <- get_item_vector("Second Year Category", length(second_year_requirements))
-second_year_category_description <- vector(mode = "character", length = length(second_year_category))
+second_year_category <-
+  get_item_vector("Second Year Category", length(second_year_requirements))
+second_year_category_description <-
+  vector(mode = "character", length = length(second_year_category))
 
 i <- 1
-for(item in second_year_requirements){
-  second_year_category_description[i] <- str_replace_all(item, "\\/", " or") %>%
+for (item in second_year_requirements) {
+  second_year_category_description[i] <-
+    str_replace_all(item, "\\/", " or") %>%
     str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_replace_all(",", " and") %>% str_squish()
   i <- i + 1
 }
 
 # Upper Year
-upper_year_requirements1 <-  str_remove(upper[1], "\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}).is recommended\\)") %>%
-  str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>% 
+upper_year_requirements1 <-
+  str_remove(upper[1],
+             "\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}).is recommended\\)") %>%
+  str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>%
   unlist() %>% str_remove_all(",") %>% str_replace_all("\\/", " or") %>% str_squish()
 
-upper_year_requirements2 <- upper[2] %>% str_replace_all("\\/", " or")
+upper_year_requirements2 <-
+  upper[2] %>% str_replace_all("\\/", " or")
 
-upper_year_category <- get_item_vector("Upper Year Category", length(upper_year_requirements1) + length(upper_year_requirements2))
-upper_year_category_description <- c(upper_year_requirements1, upper_year_requirements2)
+upper_year_category <-
+  get_item_vector(
+    "Upper Year Category",
+    length(upper_year_requirements1) + length(upper_year_requirements2)
+  )
+upper_year_category_description <-
+  c(upper_year_requirements1, upper_year_requirements2)
 
-upper_year_general_category <- get_item_vector("Upper Year General Category", 2)
+general_category <- get_item_vector("General Category", 2)
 
-upper_year_requirements3 <- upper[3] %>% str_replace_all("\\/", " or") %>% str_squish()
+upper_year_requirements3 <-
+  upper[3] %>% str_replace_all("\\/", " or") %>% str_squish()
 
-upper_year_general_category_description <- c(upper_year_requirements3, upper[4])
+general_category_description <-
+  c(upper_year_requirements3, upper[4])
 
-categories <- c(first_year_category, second_year_category, upper_year_category)
-category_descriptions <- c(first_year_category_description, second_year_category_description, upper_year_category_description)
+categories <-
+  c(first_year_category,
+    second_year_category,
+    upper_year_category)
+category_descriptions <-
+  c(
+    first_year_category_description,
+    second_year_category_description,
+    upper_year_category_description
+  )
 
-course_category <- vector(mode = "character", length = length(course_codes))
-course_category_description <- vector(mode = "character", length = length(course_codes))
+courses_list <-
+  str_extract_all(category_descriptions,
+                  "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})")
+courses <- unlist(courses_list)
+
+course_category <-
+  vector(mode = "character", length = length(courses))
+course_category_description <-
+  vector(mode = "character", length = length(courses))
 
 i <- 1
-for(course in course_codes){
-  index <- grep(course, category_descriptions)
-  course_category[i] <- categories[index]
-  course_category_description[i] <- category_descriptions[index]
+j <- 1
+for (item in courses_list) {
+  course_vector <- unlist(item)
+  for (value in course_vector) {
+    course_category[j] <- categories[i]
+    course_category_description[j] <- category_descriptions[i]
+    j <- j + 1
+  }
+  i <- i + 1
+}
+
+course_requirements_with_categories <-
+  data.frame(courses, course_category, course_category_description)
+colnames(course_requirements_with_categories) <-
+  c("Course Code", "Category", "Category Description")
+
+program_requirements <-
+  merge(course_requirements_with_categories, required_courses, by = "Course Code") %>%
+  select(
+    "Course Code",
+    "Course Name",
+    "Course Description",
+    "Category",
+    "Category Description",
+    "Credit Amount",
+    "Delivery Format",
+    "Antirequisite",
+    "Prerequisite",
+    "Corequisite",
+    "Recommended Courses",
+    "Hours",
+    "Lecture",
+    "Lab",
+    "Tutorial",
+    "Seminar",
+    "Breadth Requirement",
+    "Distribution Requirement",
+    "Note"
+  )
+
+# Add general requirement
+general_requirement <- rep(NA, ncol(program_requirements))
+i <- 1
+for (item in general_category) {
+  general_requirement[1] <- general_category[i]
+  general_requirement[4] <- general_category[i]
+  general_requirement[5] <- general_category_description[i]
+  program_requirements <- rbind(program_requirements, general_requirement)
   i <- i + 1
 }
