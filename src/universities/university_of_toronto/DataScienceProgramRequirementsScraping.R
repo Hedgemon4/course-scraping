@@ -173,15 +173,62 @@ upper <- html_nodes(program_page, ".field--name-field-completion-requirements li
 first_year_requirements <-
   str_split(first, "Note") %>% unlist() %>% .[1] %>%
   strsplit(year_requirement_categories[1], fixed = TRUE) %>% unlist() %>% .[2] %>%
-  str_remove("\\(.*is recommended\\)") %>%
+  str_remove("\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}).is recommended\\)") %>%
   str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>% unlist()
 
-first_year_category <- get_item_vector("First Year Requirement", length(first_year_requirements))
+first_year_category <- get_item_vector("First Year Category", length(first_year_requirements))
 first_year_category_description <- vector(mode = "character", length = length(first_year_category))
 
 i <- 1
 for(item in first_year_requirements){
   first_year_category_description[i] <- str_replace_all(item, "\\/", " or") %>%
     str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_squish() %>% str_replace_all(",", " and")
+  i <- i + 1
+}
+
+# Second Year
+second_year_requirements <-
+  str_split(second, "Note") %>% unlist() %>% .[1] %>% 
+  strsplit(year_requirement_categories[2], fixed = TRUE) %>% unlist() %>% .[2] %>%
+  str_remove("\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}).is recommended\\)") %>%
+  str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>% unlist()
+
+second_year_category <- get_item_vector("Second Year Category", length(second_year_requirements))
+second_year_category_description <- vector(mode = "character", length = length(second_year_category))
+
+i <- 1
+for(item in second_year_requirements){
+  second_year_category_description[i] <- str_replace_all(item, "\\/", " or") %>%
+    str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_replace_all(",", " and") %>% str_squish()
+  i <- i + 1
+}
+
+# Upper Year
+upper_year_requirements1 <-  str_remove(upper[1], "\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}).is recommended\\)") %>%
+  str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>% 
+  unlist() %>% str_remove_all(",") %>% str_replace_all("\\/", " or") %>% str_squish()
+
+upper_year_requirements2 <- upper[2] %>% str_replace_all("\\/", " or")
+
+upper_year_category <- get_item_vector("Upper Year Category", length(upper_year_requirements1) + length(upper_year_requirements2))
+upper_year_category_description <- c(upper_year_requirements1, upper_year_requirements2)
+
+upper_year_general_category <- get_item_vector("Upper Year General Category", 2)
+
+upper_year_requirements3 <- upper[3] %>% str_replace_all("\\/", " or") %>% str_squish()
+
+upper_year_general_category_description <- c(upper_year_requirements3, upper[4])
+
+categories <- c(first_year_category, second_year_category, upper_year_category)
+category_descriptions <- c(first_year_category_description, second_year_category_description, upper_year_category_description)
+
+course_category <- vector(mode = "character", length = length(course_codes))
+course_category_description <- vector(mode = "character", length = length(course_codes))
+
+i <- 1
+for(course in course_codes){
+  index <- grep(course, category_descriptions)
+  course_category[i] <- categories[index]
+  course_category_description[i] <- category_descriptions[index]
   i <- i + 1
 }
