@@ -1,4 +1,6 @@
 # University of Toronto Data Science Program Requirements Scraping
+# Note: Credits are using the standardized definition 
+# (ie 3 credits per course, 120 credits for four year degree)
 
 # Packages ####
 library(rvest)
@@ -12,7 +14,7 @@ library(stringi)
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
 # TODO List ####
-# TODO: Clean Code
+# TODO: Redo categories based on criteria discussed with Irene
 
 # Required Courses ####
 program_link <-
@@ -47,7 +49,7 @@ delivery <- vector(mode = "character", length = number_of_courses)
 antireq <- vector(mode = "character", length = number_of_courses)
 recommended <-
   vector(mode = "character", length = number_of_courses)
-credits <- vector(mode = "character", length = number_of_courses)
+credits <- vector(mode = "numeric", length = number_of_courses)
 hours <- vector(mode = "character", length = number_of_courses)
 other <- vector(mode = "character", length = number_of_courses)
 
@@ -87,9 +89,9 @@ for (link in course_links) {
   recommended[i] <-
     grep("Recommended Preparation", other_course_information, value = TRUE) %>% paste(collapse = " ")
   if (grepl("(CSC|JSC|MAT|STA)([0-9]*)(H)([0-9]*)", course_codes[i])) {
-    credits[i] <- "0.5"
+    credits[i] <- 3
   } else if (grepl("(CSC|JSC|MAT|STA)([0-9]*)(Y)([0-9]*)", course_codes[i])) {
-    credits[i] <- "1.0"
+    credits[i] <- 6
   }
   hours[i] <-
     grep("Hours", other_course_information, value = TRUE) %>% paste(collapse = " ")
@@ -188,8 +190,6 @@ first_year_requirements <-
   str_remove("\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}).is recommended\\)") %>%
   str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>% unlist()
 
-first_year_category <-
-  get_item_vector("First Year Category", length(first_year_requirements))
 first_year_category_description <-
   str_replace_all(first_year_requirements, "\\/", " or") %>%
   str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_squish() %>% str_replace_all(",", " and")
@@ -201,8 +201,6 @@ second_year_requirements <-
   str_remove("\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}).is recommended\\)") %>%
   str_split("(?=,)(?<!\\(.(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))") %>% unlist()
 
-second_year_category <-
-  get_item_vector("Second Year Category", length(second_year_requirements))
 second_year_category_description <-
   str_replace_all(second_year_requirements, "\\/", " or") %>%
   str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_replace_all(",", " and") %>% str_squish()
@@ -217,16 +215,11 @@ upper_year_requirements1 <-
 upper_year_requirements2 <-
   upper[2] %>% str_replace_all("\\/", " or")
 
-upper_year_category <-
-  get_item_vector(
-    "Upper Year Category",
-    length(upper_year_requirements1) + length(upper_year_requirements2)
-  )
 upper_year_category_description <-
   c(upper_year_requirements1, upper_year_requirements2)
 
 # General Requirements
-general_category <- get_item_vector("General Category", 2)
+general_category <- get_item_vector("General ", 2)
 
 upper_year_requirements3 <-
   upper[3] %>% str_replace_all("\\/", " or") %>% str_squish()
@@ -234,10 +227,8 @@ upper_year_requirements3 <-
 general_category_description <-
   c(upper_year_requirements3, upper[4])
 
-categories <-
-  c(first_year_category,
-    second_year_category,
-    upper_year_category)
+# New categorization
+
 category_descriptions <-
   c(
     first_year_category_description,
@@ -245,27 +236,43 @@ category_descriptions <-
     upper_year_category_description
   )
 
-courses_list <-
-  str_extract_all(category_descriptions,
-                  "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})")
-courses <- unlist(courses_list)
+courses <- vector(mode = "character")
+course_category <- vector(mode = "character")
+course_category_description <- vector(mode = "character")
+course_category_credit_amount <- vector(more = numeric)
 
-course_category <-
-  vector(mode = "character", length = length(courses))
-course_category_description <-
-  vector(mode = "character", length = length(courses))
-
-i <- 1
-j <- 1
-for (item in courses_list) {
-  course_vector <- unlist(item)
-  for (value in course_vector) {
-    course_category[j] <- categories[i]
-    course_category_description[j] <- category_descriptions[i]
-    j <- j + 1
+for(item in first_year_category_description){
+  if(grepl("^((CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))(?!.*(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))", item)){
+    
+  }else {
+    
   }
-  i <- i + 1
 }
+
+# Old Code
+# category_descriptions <-
+#   c(
+#     first_year_category_description,
+#     second_year_category_description,
+#     upper_year_category_description
+#   )
+# 
+# categories <- vector(mode = "character", length = length(category_descriptions))
+# 
+# core_requirements <- grep("^((CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))(?!.*(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))", category_descriptions, perl = TRUE)
+# 
+# categories <- replace(categories, core_requirements, "Core")
+# 
+# courses_list <-
+#   str_extract_all(category_descriptions,
+#                   "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})")
+# 
+# courses <- unlist(courses_list)
+# 
+# course_category <-
+#   vector(mode = "character", length = length(courses))
+# course_category_description <-
+#   vector(mode = "character", length = length(courses))
 
 # Requirements Dataframe ####
 
