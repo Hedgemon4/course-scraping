@@ -354,5 +354,5 @@ for (item in general_category_description) {
 }
 
 # Generate CSV Files ####
-write.csv(general_requirement, "University of Toronto Data Science Program Requirements.csv")
+write.csv(program_requirements, "University of Toronto Data Science Program Requirements.csv")
 write.csv(required_courses, "University of Toronto Data Science Required Courses.csv")
