@@ -1,5 +1,5 @@
 # University of Toronto Data Science Program Requirements Scraping
-# Note: Credits are using the standardized definition 
+# Note: Credits are using the standardized definition
 # (ie 3 credits per course, 120 credits for four year degree)
 
 # Packages ####
@@ -205,6 +205,14 @@ second_year_category_description <-
   str_replace_all(second_year_requirements, "\\/", " or") %>%
   str_replace_all("(,)(?<![0-9]{1},)", "") %>% str_replace_all(",", " and") %>% str_squish()
 
+test <-
+  grepl(
+    "(?=\\(.+?\\))(?<!(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))",
+    second_year_category_description[5],
+    perl = T
+  )
+test
+
 # Upper Year
 upper_year_requirements1 <-
   str_remove(upper[1],
@@ -232,10 +240,12 @@ general_category_description <-
 # TODO: Need to label requirements with one course "Core" and all others should be named by year
 # TODO: Need credit requirement for category
 
-category_descriptions <-
+descriptions <-
   c(
     first_year_category_description,
+    "Second Year Requirements",
     second_year_category_description,
+    "Upper Year Requirements",
     upper_year_category_description
   )
 
@@ -249,99 +259,100 @@ alpahbets <- c("A", "B", "C", "D", "E", "F")
 i <- 1
 j <- 1
 k <- 1
-for(item in first_year_category_description){
-  courses_in_category <- str_extract_all(item, "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})") %>% unlist()
-  total_credits <- sum(ifelse(grepl("Y", courses_in_category), 6, 3))
-  if(grepl("\\(.*\\)", item)){
-    category[i] <- paste0("Category F", j)
+year <- "F"
+for (item in descriptions) {
+  if (grepl("(Second|Upper)( Year Requirements)", item)) {
+    j <- 1
+    year <- substr(item, 1, 1)
+    next
+  }
+  courses_in_category <-
+    str_extract_all(item, "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})") %>% unlist()
+  total_credits <-
+    sum(ifelse(grepl("Y", courses_in_category), 6, 3))
+  if (grepl("\\(.+?and.+?\\)", item)) {
+    category[i] <- paste0("Category ", year, j)
     category_description[i] <- item
-    subcategories <- str_extract_all(item, "(\\(.+?\\))") %>% unlist()
+    subcategories <-
+      str_split(item, "or") %>% unlist() %>% str_squish()
     temp <- i
     i <- i + 1
     maximum <- 0
     minimum <- 100000
-    for(sub in subcategories){
+    for (sub in subcategories) {
+      courses_in_sub <-
+        str_extract_all(sub, "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})") %>% unlist()
       category[i] <- paste0(category[temp], alpahbets[k])
       category_description[i] <- sub
-      category_min_credit[i] <- min(ifelse(grepl("Y", sub), 6, 3))
-      category_max_credit[i] <- min(ifelse(grepl("Y", sub), 6, 3))
-      maximum <-max(maximum, category_max_credit[i])
+      category_min_credit[i] <-
+        sum(ifelse(grepl("Y", courses_in_sub), 6, 3))
+      category_max_credit[i] <-
+        sum(ifelse(grepl("Y", courses_in_sub), 6, 3))
+      maximum <- max(maximum, category_max_credit[i])
       minimum <- min(minimum, category_min_credit[i])
-      isCore[i] <- NA
+      isCore[i] <- FALSE
       k <- k + 1
       i <- i + 1
     }
     category_max_credit[temp] <- maximum
     category_min_credit[temp] <- minimum
-    isCore[temp] <- (category_max_credit[temp] == category_min_credit[temp] & 
-                    category_max_credit[temp] == total_credits)
+    isCore[temp] <-
+      (
+        category_max_credit[temp] == category_min_credit[temp] &
+          category_max_credit[temp] == total_credits
+      )
     k <- 1
   } else{
-    category[i] <- paste0("Category F", j)
+    category[i] <- paste0("Category ", year, j)
     category_description[i] <- item
-    category_min_credit[i] <- min(ifelse(grepl("Y", courses_in_category), 6, 3))
-    category_max_credit[i] <- min(ifelse(grepl("Y", courses_in_category), 6, 3))
-    isCore[i] <- (category_max_credit[temp] == category_min_credit[temp] & 
-                    category_max_credit[temp] == total_credits)
+    category_min_credit[i] <-
+      min(ifelse(grepl("Y", courses_in_category), 6, 3))
+    category_max_credit[i] <-
+      min(ifelse(grepl("Y", courses_in_category), 6, 3))
+    isCore[i] <-
+      (
+        category_max_credit[i] == category_min_credit[i] &
+          category_max_credit[i] == total_credits
+      )
     i <- i + 1
   }
   j <- j + 1
 }
 
-test <- data.frame(category, category_description, category_min_credit, category_max_credit, isCore)
-
-for(item in second_year_category_description){
-  
-}
-
-for(item in upper_year_category_description){
-  
-}
-
 # Requirements Dataframe ####
 
-course_requirements_with_categories <-
-  data.frame(courses, course_category, course_category_description, course_category_credit_amount)
-colnames(course_requirements_with_categories) <-
-  c("Course Code", "Category", "Category Description", "Category Credit Amount")
-
 program_requirements <-
-  merge(course_requirements_with_categories, required_courses, by = "Course Code") %>%
-  select(
-    "Course Code",
-    "Course Name",
-    "Course Description",
-    "Credit Amount",
-    "Category",
+  data.frame(category,
+             category_description,
+             category_min_credit,
+             category_max_credit,
+             isCore)
+colnames(program_requirements) <-
+  c(
+    "Requirement Category",
     "Category Description",
-    "Category Credit Amount",
-    "Delivery Format",
-    "Antirequisite",
-    "Prerequisite",
-    "Corequisite",
-    "Recommended Courses",
-    "Hours",
-    "Lecture",
-    "Lab",
-    "Tutorial",
-    "Seminar",
-    "Breadth Requirement",
-    "Distribution Requirement",
-    "Note"
+    "Category Minimum Credit Amount",
+    "Category Maximum Credit Amount",
+    "Core Course"
   )
 
 # Add general requirement
 general_requirement <- rep(NA, ncol(program_requirements))
 i <- 1
-for (item in general_category) {
+for (item in general_category_description) {
   general_requirement[1] <- general_category[i]
-  general_requirement[5] <- general_category[i]
-  general_requirement[6] <- general_category_description[i]
+  general_requirement[2] <- general_category_description[i]
+  credit <-
+    as.numeric(str_extract(item, "([0-9]{1}\\.[0-9]{1})(?=.credit)")) * 6
+  general_requirement[3] <-
+    ifelse(grepl("an additional", item), 0, credit)
+  general_requirement[4] <- credit
+  general_requirement[5] <- FALSE
   program_requirements <-
     rbind(program_requirements, general_requirement)
   i <- i + 1
 }
 
 # Generate CSV Files ####
-# write.csv(general_requirement, "University of Toronto Data Science Program Requirements.csv")
-# write.csv(required_courses, "University of Toronto Data Science Required Courses.csv")
+write.csv(general_requirement, "University of Toronto Data Science Program Requirements.csv")
+write.csv(required_courses, "University of Toronto Data Science Required Courses.csv")
