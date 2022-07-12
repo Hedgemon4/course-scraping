@@ -229,6 +229,9 @@ general_category_description <-
 
 # New categorization
 
+# TODO: Need to label requirements with one course "Core" and all others should be named by year
+# TODO: Need credit requirement for category
+
 category_descriptions <-
   c(
     first_year_category_description,
@@ -236,16 +239,26 @@ category_descriptions <-
     upper_year_category_description
   )
 
-courses <- vector(mode = "character")
+courses <- str_extract_all(category_descriptions, "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})") %>% unlist()
 course_category <- vector(mode = "character")
 course_category_description <- vector(mode = "character")
 course_category_credit_amount <- vector(more = numeric)
 
+i <- 1
+j <- 1
 for(item in first_year_category_description){
-  if(grepl("^((CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))(?!.*(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))", item)){
-    
-  }else {
-    
+  course_split <- strsplit(item, "or") %>% unlist()
+  if(length(course_split) == 1){
+    course_category[i] <- "Core"
+    course_category_description[i] <- item
+    course_category_credit_amount[i] <- ifelse(grepl("Y", item), 6, 3)
+    i <- i + 1
+  } else {
+    for(sub in course_split){
+      courses_in_sub <- str_extract_all(sub, "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})") %>% unlist()
+      credit_amount <- sum(ifelse(grepl("Y", courses_in_sub), 6, 3))
+      description <- paste0("Category ", "F")
+    }
   }
 }
 
