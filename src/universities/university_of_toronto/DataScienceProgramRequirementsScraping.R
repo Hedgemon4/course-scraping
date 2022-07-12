@@ -219,7 +219,7 @@ upper_year_category_description <-
   c(upper_year_requirements1, upper_year_requirements2)
 
 # General Requirements
-general_category <- get_item_vector("General ", 2)
+general_category <- get_item_vector("General Category ", 2)
 
 upper_year_requirements3 <-
   upper[3] %>% str_replace_all("\\/", " or") %>% str_squish()
@@ -239,60 +239,71 @@ category_descriptions <-
     upper_year_category_description
   )
 
-courses <- str_extract_all(category_descriptions, "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})") %>% unlist()
-course_category <- vector(mode = "character")
-course_category_description <- vector(mode = "character")
-course_category_credit_amount <- vector(more = numeric)
+category <- vector(mode = "character")
+category_description <- vector(mode = "character")
+category_min_credit <- vector(mode = "numeric")
+category_max_credit <- vector(mode = "numeric")
+isCore <- vector(mode = "logical")
+alpahbets <- c("A", "B", "C", "D", "E", "F")
 
 i <- 1
 j <- 1
+k <- 1
 for(item in first_year_category_description){
-  course_split <- strsplit(item, "or") %>% unlist()
-  if(length(course_split) == 1){
-    course_category[i] <- "Core"
-    course_category_description[i] <- item
-    course_category_credit_amount[i] <- ifelse(grepl("Y", item), 6, 3)
+  courses_in_category <- str_extract_all(item, "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})") %>% unlist()
+  total_credits <- sum(ifelse(grepl("Y", courses_in_category), 6, 3))
+  if(grepl("\\(.*\\)", item)){
+    category[i] <- paste0("Category F", j)
+    category_description[i] <- item
+    subcategories <- str_extract_all(item, "(\\(.+?\\))") %>% unlist()
+    temp <- i
     i <- i + 1
-  } else {
-    for(sub in course_split){
-      courses_in_sub <- str_extract_all(sub, "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})") %>% unlist()
-      credit_amount <- sum(ifelse(grepl("Y", courses_in_sub), 6, 3))
-      description <- paste0("Category ", "F")
+    maximum <- 0
+    minimum <- 100000
+    for(sub in subcategories){
+      category[i] <- paste0(category[temp], alpahbets[k])
+      category_description[i] <- sub
+      category_min_credit[i] <- min(ifelse(grepl("Y", sub), 6, 3))
+      category_max_credit[i] <- min(ifelse(grepl("Y", sub), 6, 3))
+      maximum <-max(maximum, category_max_credit[i])
+      minimum <- min(minimum, category_min_credit[i])
+      isCore[i] <- NA
+      k <- k + 1
+      i <- i + 1
     }
+    category_max_credit[temp] <- maximum
+    category_min_credit[temp] <- minimum
+    isCore[temp] <- (category_max_credit[temp] == category_min_credit[temp] & 
+                    category_max_credit[temp] == total_credits)
+    k <- 1
+  } else{
+    category[i] <- paste0("Category F", j)
+    category_description[i] <- item
+    category_min_credit[i] <- min(ifelse(grepl("Y", courses_in_category), 6, 3))
+    category_max_credit[i] <- min(ifelse(grepl("Y", courses_in_category), 6, 3))
+    isCore[i] <- (category_max_credit[temp] == category_min_credit[temp] & 
+                    category_max_credit[temp] == total_credits)
+    i <- i + 1
   }
+  j <- j + 1
 }
 
-# Old Code
-# category_descriptions <-
-#   c(
-#     first_year_category_description,
-#     second_year_category_description,
-#     upper_year_category_description
-#   )
-# 
-# categories <- vector(mode = "character", length = length(category_descriptions))
-# 
-# core_requirements <- grep("^((CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))(?!.*(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1}))", category_descriptions, perl = TRUE)
-# 
-# categories <- replace(categories, core_requirements, "Core")
-# 
-# courses_list <-
-#   str_extract_all(category_descriptions,
-#                   "(CSC|JSC|MAT|STA)([0-9]{3})(Y|H)([0-9]{1})")
-# 
-# courses <- unlist(courses_list)
-# 
-# course_category <-
-#   vector(mode = "character", length = length(courses))
-# course_category_description <-
-#   vector(mode = "character", length = length(courses))
+test <- data.frame(category, category_description, category_min_credit, category_max_credit, isCore)
+
+for(item in second_year_category_description){
+  
+}
+
+for(item in upper_year_category_description){
+  
+}
 
 # Requirements Dataframe ####
 
 course_requirements_with_categories <-
-  data.frame(courses, course_category, course_category_description)
+  data.frame(courses, course_category, course_category_description, course_category_credit_amount)
 colnames(course_requirements_with_categories) <-
-  c("Course Code", "Category", "Category Description")
+  c("Course Code", "Category", "Category Description", "Category Credit Amount")
 
 program_requirements <-
   merge(course_requirements_with_categories, required_courses, by = "Course Code") %>%
@@ -300,9 +311,10 @@ program_requirements <-
     "Course Code",
     "Course Name",
     "Course Description",
+    "Credit Amount",
     "Category",
     "Category Description",
-    "Credit Amount",
+    "Category Credit Amount",
     "Delivery Format",
     "Antirequisite",
     "Prerequisite",
@@ -323,8 +335,8 @@ general_requirement <- rep(NA, ncol(program_requirements))
 i <- 1
 for (item in general_category) {
   general_requirement[1] <- general_category[i]
-  general_requirement[4] <- general_category[i]
-  general_requirement[5] <- general_category_description[i]
+  general_requirement[5] <- general_category[i]
+  general_requirement[6] <- general_category_description[i]
   program_requirements <-
     rbind(program_requirements, general_requirement)
   i <- i + 1
