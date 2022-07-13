@@ -110,7 +110,7 @@ colnames(course_info) <-
     "Corequisite",
     "Equivalency",
     "Antirequisite",
-    "Note", 
+    "Note",
     "Lab"
   )
 
@@ -118,7 +118,7 @@ colnames(course_info) <-
 
 program_table <-
   html_nodes(web_page,
-             "#degreerequirementstextcontainer > table.sc_plangrid") %>% 
+             "#degreerequirementstextcontainer > table.sc_plangrid") %>%
   html_table() %>% .[[1]]
 colnames(program_table) <- c("code", "name", "credit")
 
@@ -138,16 +138,20 @@ i <- 1
 j <- 1
 rownum <- 0
 k <- 1
-for(item in program_table$code){
+for (item in program_table$code) {
   rownum <- rownum + 1
-  if(isSub){
-    if(grepl("(COMP|MATH|STAT|DATA|SCI).([0-9]{4})", item) & program_table$credit[rownum] == ""){
-      sub_category_description <- paste(" ", sub_category_description, item)
+  if (isSub) {
+    if (grepl("(COMP|MATH|STAT|DATA|SCI).([0-9]{4})", item) &
+        program_table$credit[rownum] == "") {
+      sub_category_description <-
+        paste(" ", sub_category_description, item)
       next
-    }else{
+    } else{
       category[i] <- sub_category
-      category_description[i] <- sub_category_description %>% str_squish()
-      credit <- str_extract(sub_category_description, "([0-9])") %>% unlist() %>% as.numeric()
+      category_description[i] <-
+        sub_category_description %>% str_squish()
+      credit <-
+        str_extract(sub_category_description, "([0-9])") %>% unlist() %>% as.numeric()
       category_min_credit[i] <- credit
       category_max_credit[i] <- credit
       category_isCore[i] <- FALSE
@@ -156,36 +160,36 @@ for(item in program_table$code){
       isSub <- FALSE
     }
   }
- if(grepl("Year(s|) (1|2|3\\-4)", item)){
+  if (grepl("Year(s|) (1|2|3\\-4)", item)) {
     year_num <- str_extract(item, "[0-9]{1}") %>% as.numeric()
     year <- switch(year_num, "F", "S", "U")
     isSub <- FALSE
     j <- 1
     next
-  } else if(grepl("Co\\-op.Requirements", item)){
+  } else if (grepl("Co\\-op.Requirements", item)) {
     year <- "C"
     isSub <- FALSE
     j <- 1
     next
-  } else if(grepl("([0-9]?).credit.hours.from:", item)){
+  } else if (grepl("([0-9]?).credit.hours.from:", item)) {
     isSub <- TRUE
     sub_category <- paste0("Category ", year, j)
     sub_category_description <- item %>% str_squish()
     next
-  }else if(grepl("(COMP|MATH|STAT|DATA|SCI).([0-9]{4})", item)){
-      category_isCore[i] <- TRUE
-      category[i] <- paste0("Category ", year, j)
-      category_description[i] <- item
-      credit <- program_table$credit[rownum] %>% as.numeric()  
-      category_max_credit[i] <- credit
-      category_min_credit[i] <- credit
-      i <- i + 1
-      j <- j + 1
+  } else if (grepl("(COMP|MATH|STAT|DATA|SCI).([0-9]{4})", item)) {
+    category_isCore[i] <- TRUE
+    category[i] <- paste0("Category ", year, j)
+    category_description[i] <- item
+    credit <- program_table$credit[rownum] %>% as.numeric()
+    category_max_credit[i] <- credit
+    category_min_credit[i] <- credit
+    i <- i + 1
+    j <- j + 1
   } else{
     category_isCore[i] <- FALSE
     category[i] <- paste0("Category G", k)
     category_description[i] <- item
-    credit <- program_table$credit[rownum] %>% as.numeric()  
+    credit <- program_table$credit[rownum] %>% as.numeric()
     category_max_credit[i] <- credit
     category_min_credit[i] <- credit
     i <- i + 1
@@ -193,9 +197,26 @@ for(item in program_table$code){
   }
 }
 
-program_requirements <- data.frame(category, category_description, category_min_credit, category_max_credit, category_isCore)
+program_requirements <-
+  data.frame(
+    category,
+    category_description,
+    category_min_credit,
+    category_max_credit,
+    category_isCore
+  )
+
+colnames(program_requirements) <- c(
+  "Requirement Category",
+  "Category Description",
+  "Category Minimum Credit Amount",
+  "Category Maximum Credit Amount",
+  "Core Course"
+)
+
 View(program_requirements)
 
 # Output CSV ####
-# write.csv(program_requirements, "University of Manitoba Data Science Program Requirements.csv")
+write.csv(program_requirements,
+          "University of Manitoba Data Science Program Requirements.csv")
 # write.csv(course_info, "University of Manitoba Data Science Required Courses.csv")

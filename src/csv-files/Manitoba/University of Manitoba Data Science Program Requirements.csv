@@ -1,4 +1,4 @@
-"","category","category_description","category_min_credit","category_max_credit","category_isCore"
+"","Requirement Category","Category Description","Category Minimum Credit Amount","Category Maximum Credit Amount","Core Course"
 "1","Category F1","COMP 1012",3,3,TRUE
 "2","Category F2","COMP 1020",3,3,TRUE
 "3","Category F3","MATH 1220",3,3,TRUE
