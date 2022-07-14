@@ -89,21 +89,6 @@ get_other_course_info <- function(link, n) {
   return(data.frame(prereq, antireq, coreq, note, other))
 }
 
-# Program Requirements ####
-
-web_link <-
-  "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
-
-waterloo_course_requirements <-
-  get_text_dataframe(
-    "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1",
-    "#ctl00_contentMain_lblContent ul ul a"
-  )
-
-number_of_courses <- nrow(waterloo_course_requirements)
-
-colnames(waterloo_course_requirements) <- c("Course Code")
-
 # Course Calendars ####
 
 cs_courses_waterloo <-
@@ -365,7 +350,7 @@ colnames(amath_course_credits) <- "Credit Amount"
 amath_courses_waterloo <-
   cbind(amath_courses_waterloo, amath_course_credits)
 
-course_calendar <- cbind(cs_courses_waterloo, math_courses_waterloo, stat_courses_waterloo, engl_courses_waterloo, mthel_courses_waterloo, amath_courses_waterloo)
+course_calendar <- rbind(cs_courses_waterloo, math_courses_waterloo, stat_courses_waterloo, engl_courses_waterloo, mthel_courses_waterloo, amath_courses_waterloo)
 
 # Program Requirements ####
 
@@ -382,9 +367,10 @@ category_max <- vector(mode = "numeric", length = num_categories)
 isCore <- vector(mode = "logical", length = num_categories)
 
 i <- 1
+other_requirements <- ""
 for (item in category_description) {
   description <- paste0(item, ": ")
-  courses_in_category <-
+  category_requirements <-
     html_nodes(
       program_page,
       paste0(
@@ -393,32 +379,49 @@ for (item in category_description) {
         ") > ul > li"
       )
     ) %>%
-    html_text %>% str_squish() %>% str_extract_all("(CS|MATH|STAT|AMATH|ENGL).([0-9]{3})([A-Z]?)") %>% unlist() %>% str_squish()
+    html_text %>% str_squish()
+  other_requirements <- grep("((O|o)ne)|((T|t)wo)|((T|t)hree)|((F|f)our)|((A|a)ll)", item, value = TRUE) %>% paste(collapse = ", ")
+  courses_in_category <-  str_extract_all(category_requirements, "(CS|MATH|STAT|AMATH|ENGL).([0-9]{3})([A-Z]?)") %>% unlist() %>% str_squish()
   courses_collapsed <- paste(courses_in_category, collapse = ", ")
-  category_description[i] <-
-    paste0(description, courses_collapsed)
+  category_description[i] <-paste0(description, courses_collapsed, other_requirements)
   category[i] <- paste0("Category G", i)
   credit <-
-    filter(course_calendar, `Course Code` %in% courses_in_category) %>% select(`Credit Amount`) %>% .[[1]] %>% sort(decreasing = TRUE)
+    filter(course_calendar, `Course Code` %in% courses_in_category) %>% select(`Credit Amount`) %>% .[[1]] %>% as.numeric() %>% sort(decreasing = TRUE)
+  if(length(credit) == 0)
+    credit = 100000
   sum_credit <- sum(credit)
-  if (grepl("One.of", item)) {
-    category_max[i] <- max(credit)
-    category_min[i] <- min(credit)
-  } else if (grepl("Two", item)) {
-    category_max[i] <- credit[1] + credit[2]
+  if (grepl("(O|o)ne", item)) {
+    category_max[i] <- min(max(credit), 3.0)
+    category_min[i] <- min(min(credit), 3.0)
+  } else if (grepl("(T|t)wo", item)) {
+    category_max[i] <- min((credit[1] + credit[2]), 6.0)
     category_min[i] <-
-      credit[length(credit)] + credit[length(credit) - 1]
-  } else if (grepl("All.of", item)) {
+      min((credit[length(credit)] + credit[length(credit) - 1]), 6.0)
+  } else if (grepl("(A|a)ll", item)) {
     category_max[i] <- sum_credit
     category_min[i] <- sum_credit
+  } else if(grepl("(T|t)hree", item)){
+    category_max[i] <- min((credit[1] + credit[2] + credit[3]), 6.0)
+    category_min[i] <-
+      min((credit[length(credit)] + credit[length(credit) - 1] + credit[length(credit) - 2]), 6.0)
+  } else if(grepl("(F|f)our", item)){
+    category_max[i] <- min((credit[1] + credit[2] + credit[3] + credit[4]), 6.0)
+    category_min[i] <-
+      min((credit[length(credit)] + credit[length(credit) - 1] + credit[length(credit) - 2] + credit[length(credit) - 3]), 6.0)
   } else{
-    category_max[i] <- 0
-    category_min[i] <- 0
+    category_max[i] <- -1.0
+    category_min[i] <- -1.0
   }
   if (sum_credit == category_max[i] & sum_credit == category_min[i])
     isCore[i] = TRUE
   i <- i + 1
+  other_requirements <- ""
 }
+
+  html_nodes(
+    program_page,
+      "#ctl00_contentMain_lblContent > ul > li:nth-child(7) > ul > li"
+  ) %>% html_text %>% str_squish()
 
 program_requirements <-
   data.frame(category,
