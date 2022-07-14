@@ -217,6 +217,6 @@ colnames(program_requirements) <- c(
 View(program_requirements)
 
 # Output CSV ####
-write.csv(program_requirements,
-          "University of Manitoba Data Science Program Requirements.csv")
+# write.csv(program_requirements,
+#           "University of Manitoba Data Science Program Requirements.csv")
 # write.csv(course_info, "University of Manitoba Data Science Required Courses.csv")
