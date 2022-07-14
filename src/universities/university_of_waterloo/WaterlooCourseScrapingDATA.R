@@ -281,7 +281,8 @@ for (item in category_description) {
     category_min[i] <- min(credit)
   } else if (grepl("Two", item)) {
     category_max[i] <- credit[1] + credit[2]
-    category_min[i] <- credit[length(credit)] + credit[length(credit) - 1]
+    category_min[i] <-
+      credit[length(credit)] + credit[length(credit) - 1]
   } else if (grepl("All.of", item)) {
     category_max[i] <- sum_credit
     category_min[i] <- sum_credit
