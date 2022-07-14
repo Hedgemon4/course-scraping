@@ -31,6 +31,7 @@ course_info_links <-
   html_nodes(web_page, "#degreerequirementstextcontainer .code") %>% html_attr("href")
 number_of_courses <- length(course_info_links)
 
+# Vectors for Course Information
 course_name <-
   vector(mode = "character", length = number_of_courses)
 course_description <-
@@ -43,6 +44,8 @@ notes <- vector(mode = "character", length = number_of_courses)
 equiv <- vector(mode = "character", length = number_of_courses)
 exclusive <- vector(mode = "character", length = number_of_courses)
 
+# Goes to each course code link, and seperates out the various details about the
+# courses into the column vectors declared aboce
 i <- 1
 for (item in course_info_links) {
   course_link <- paste0(courses_main_link, course_info_links[i])
@@ -81,6 +84,8 @@ for (item in course_info_links) {
 
 labs <- grepl("lab|Lab", course_description)
 
+# Data frame for storing the information about all the potentially required courses
+# for the program
 course_info <-
   data.frame(
     course_codes,
@@ -105,179 +110,113 @@ colnames(course_info) <-
     "Corequisite",
     "Equivalency",
     "Antirequisite",
-    "Note", 
+    "Note",
     "Lab"
   )
 
-information <-
-  html_nodes(web_page, "#degreerequirementstextcontainer .codecol") %>% html_text()
+# Program Requirements ####
 
 program_table <-
   html_nodes(web_page,
-             "#degreerequirementstextcontainer > table.sc_plangrid") %>% html_table() %>% .[[1]]
+             "#degreerequirementstextcontainer > table.sc_plangrid") %>%
+  html_table() %>% .[[1]]
 colnames(program_table) <- c("code", "name", "credit")
 
-# Category Information ####
+program_table <- filter(program_table, code != "")
 
-# Core Requiements
-core_requirements <-
-  program_table %>% filter(str_detect(code, "COMP|MATH|DATA|STAT"), credit == '3') %>% select(code)
-core_requirement_category <- rep("Core", nrow(core_requirements))
-core_requirement_category_description <-
-  rep("Core Requirement", nrow(core_requirements))
-core_requirements <-
-  cbind(
-    core_requirements,
-    core_requirement_category,
-    core_requirement_category_description
-  )
+category <- vector(mode = "character")
+category_description <- vector(mode = "character")
+category_min_credit <- vector(mode = "numeric")
+category_max_credit <- vector(mode = "numeric")
+category_isCore <- vector(mode = "logical")
+isSub <- FALSE
+sub_category <- ""
+sub_category_description <- ""
+year <- "F"
 
-colnames(core_requirements) <-
-  c("Course Code", "Category", "Category Description")
-
-
-program_requirements <-
-  merge.data.frame(course_info, core_requirements, by = "Course Code") %>% select(
-    "Course Code",
-    "Course Name",
-    "Course Description",
-    "Category",
-    "Category Description",
-    "Credit Amount",
-    "Prerequisite",
-    "Corequisite",
-    "Equivalency",
-    "Antirequisite",
-    "Note",
-    "Lab"
-  )
-
-# General Requirements
-
-general_requirements <-
-  program_table %>% filter(str_detect(code, 'credit'),
-                           str_detect(code, 'above|from:', negate = TRUE)) %>% select(code, credit)
-general_requirement_category <-
-  rep("General", nrow(general_requirements))
-general_requirement_code <-
-  rep("General Requirement", nrow(general_requirements))
-general_requirement_empty <- rep(NA, nrow(general_requirements))
-general_requirements <-
-  cbind(
-    general_requirement_code,
-    general_requirement_empty,
-    general_requirement_empty,
-    general_requirement_category,
-    general_requirements,
-    general_requirement_empty,
-    general_requirement_empty,
-    general_requirement_empty,
-    general_requirement_empty,
-    general_requirement_empty,
-    general_requirement_empty
-  )
-
-colnames(general_requirements) <-
-  cbind(
-    "Course Code",
-    "Course Name",
-    "Course Description",
-    "Category",
-    "Category Description",
-    "Credit Amount",
-    "Prerequisite",
-    "Corequisite",
-    "Equivalency",
-    "Antirequisite",
-    "Note",
-    "Lab"
-  )
-
-# Co-Op Requirements
-
-coop_requirements <-
-  program_table %>% filter(credit == '0', str_detect(name, "Co-op|co-op")) %>% select(code)
-coop_requirement_category <- rep("Co-op", nrow(coop_requirements))
-coop_requirement_description <-
-  rep("Co-op Requirement", nrow(coop_requirements))
-coop_requirements <-
-  cbind(coop_requirements,
-        coop_requirement_category,
-        coop_requirement_description)
-colnames(coop_requirements) <-
-  c("Course Code", "Category", "Category Description")
-coop_requirements <-
-  merge.data.frame(course_info, coop_requirements, by = "Course Code") %>% select(
-    "Course Code",
-    "Course Name",
-    "Course Description",
-    "Category",
-    "Category Description",
-    "Credit Amount",
-    "Prerequisite",
-    "Corequisite",
-    "Equivalency",
-    "Antirequisite",
-    "Note",
-    "Lab"
-  )
-
-# Other Requirements
-# TODO: Finish this code block and combine with other
-other_requirements_table <-
-  program_table %>% filter(credit == "" &
-                             str_detect(code, "COMP|MATH|DATA|STAT") |
-                             str_detect(code, "from:"))
-i <- 0
+i <- 1
 j <- 1
-other_requirement_codes <- vector(mode = "character")
-other_requirement_category <- vector(mode = "character")
-other_requirement_description <- vector(mode = "character")
-category_description <- ""
-category <- ""
-for (item in other_requirements_table$code) {
-  if (!grepl("COMP|MATH|DATA|STAT", item)) {
-    i = i + 1
-    category <- paste0("Other Group ", i)
-    category_description <- item
+rownum <- 0
+k <- 1
+for (item in program_table$code) {
+  rownum <- rownum + 1
+  if (isSub) {
+    if (grepl("(COMP|MATH|STAT|DATA|SCI).([0-9]{4})", item) &
+        program_table$credit[rownum] == "") {
+      sub_category_description <-
+        paste(" ", sub_category_description, item)
+      next
+    } else{
+      category[i] <- sub_category
+      category_description[i] <-
+        sub_category_description %>% str_squish()
+      credit <-
+        str_extract(sub_category_description, "([0-9])") %>% unlist() %>% as.numeric()
+      category_min_credit[i] <- credit
+      category_max_credit[i] <- credit
+      category_isCore[i] <- FALSE
+      i <- i + 1
+      j <- j + 1
+      isSub <- FALSE
+    }
+  }
+  if (grepl("Year(s|) (1|2|3\\-4)", item)) {
+    year_num <- str_extract(item, "[0-9]{1}") %>% as.numeric()
+    year <- switch(year_num, "F", "S", "U")
+    isSub <- FALSE
+    j <- 1
+    next
+  } else if (grepl("Co\\-op.Requirements", item)) {
+    year <- "C"
+    isSub <- FALSE
+    j <- 1
+    next
+  } else if (grepl("([0-9]?).credit.hours.from:", item)) {
+    isSub <- TRUE
+    sub_category <- paste0("Category ", year, j)
+    sub_category_description <- item %>% str_squish()
+    next
+  } else if (grepl("(COMP|MATH|STAT|DATA|SCI).([0-9]{4})", item)) {
+    category_isCore[i] <- TRUE
+    category[i] <- paste0("Category ", year, j)
+    category_description[i] <- item
+    credit <- program_table$credit[rownum] %>% as.numeric()
+    category_max_credit[i] <- credit
+    category_min_credit[i] <- credit
+    i <- i + 1
+    j <- j + 1
   } else{
-    other_requirement_codes[j] <- item
-    other_requirement_category[j] <- category
-    other_requirement_description[j] <- category_description
-    j = j + 1
+    category_isCore[i] <- FALSE
+    category[i] <- paste0("Category G", k)
+    category_description[i] <- item
+    credit <- program_table$credit[rownum] %>% as.numeric()
+    category_max_credit[i] <- credit
+    category_min_credit[i] <- credit
+    i <- i + 1
+    k <- k + 1
   }
 }
 
-other_requirements <-
+program_requirements <-
   data.frame(
-    other_requirement_codes,
-    other_requirement_category,
-    other_requirement_description
-  )
-colnames(other_requirements) <-
-  c("Course Code", "Category", "Category Description")
-other_requirements <-
-  merge.data.frame(other_requirements, course_info) %>% select(
-    "Course Code",
-    "Course Name",
-    "Course Description",
-    "Category",
-    "Category Description",
-    "Credit Amount",
-    "Prerequisite",
-    "Corequisite",
-    "Equivalency",
-    "Antirequisite",
-    "Note",
-    "Lab"
+    category,
+    category_description,
+    category_min_credit,
+    category_max_credit,
+    category_isCore
   )
 
-# Merge Data ####
-program_requirements <-
-  rbind(program_requirements,
-        general_requirements,
-        coop_requirements,
-        other_requirements)
+colnames(program_requirements) <- c(
+  "Requirement Category",
+  "Category Description",
+  "Category Minimum Credit Amount",
+  "Category Maximum Credit Amount",
+  "Core Course"
+)
+
+View(program_requirements)
+
 # Output CSV ####
-# write.csv(program_requirements, "University of Manitoba Data Science Program Requirements.csv")
+# write.csv(program_requirements,
+#           "University of Manitoba Data Science Program Requirements.csv")
 # write.csv(course_info, "University of Manitoba Data Science Required Courses.csv")
