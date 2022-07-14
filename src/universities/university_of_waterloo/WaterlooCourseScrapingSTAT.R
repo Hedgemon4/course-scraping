@@ -365,6 +365,8 @@ colnames(amath_course_credits) <- "Credit Amount"
 amath_courses_waterloo <-
   cbind(amath_courses_waterloo, amath_course_credits)
 
+course_calendar <- cbind(cs_courses_waterloo, math_courses_waterloo, stat_courses_waterloo, engl_courses_waterloo, mthel_courses_waterloo, amath_courses_waterloo)
+
 # Program Requirements ####
 
 program_link <-
