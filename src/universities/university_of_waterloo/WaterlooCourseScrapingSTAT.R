@@ -89,130 +89,7 @@ get_other_course_info <- function(link, n) {
   return(data.frame(prereq, antireq, coreq, note, other))
 }
 
-# Program Requirements ####
-
-web_link <-
-  "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
-
-waterloo_course_requirements <-
-  get_text_dataframe(
-    "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1",
-    "#ctl00_contentMain_lblContent ul ul a"
-  )
-
-number_of_courses <- nrow(waterloo_course_requirements)
-
-colnames(waterloo_course_requirements) <- c("Course Code")
-
-# Category Requirements ####
-
-# Pull strings for categories (like requirement v on degree navigator)
-
-# Html Nodes for the categories
-category_html_nodes <-
-  read_html(web_link) %>% html_elements(xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li")
-
-number_of_categories <- length(category_html_nodes)
-
-# Descriptions of Categories
-category_description <-
-  vector(mode = "character", length = number_of_categories)
-
-# Gets descriptions of categories base on if they have sublists or not
-i <- 1
-web_page <- read_html(web_link)
-for (item in category_html_nodes) {
-  if (grepl("ul", item))
-    category_description[i] <-
-      html_elements(
-        web_page,
-        xpath =  paste0(
-          "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li[",
-          i,
-          "]/text()"
-        )
-      ) %>% html_text() %>% str_squish()
-  else
-    category_description[i] <-
-      read_html(web_link) %>% html_elements(xpath = paste0("//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li[", i, "]")) %>% html_text() %>% str_squish()
-  i = i + 1
-}
-
-category_names <- get_item_vector("Category", number_of_categories)
-
-course_category <-
-  vector(mode = "character", length = number_of_courses)
-
-course_category_description <-
-  vector(mode = "character", length = number_of_courses)
-
-category_is_used <-
-  vector(mode = "logical", length = number_of_categories)
-
-course_code <-
-  vector(mode = "character", length = number_of_courses)
-
-general_requirement_description <- vector(mode = "character")
-general_requirement_index <- vector(mode = "numeric")
-
-# Loop gets course codes under each category, and puts their course code,
-# requirement category, and category into vectors. Also keeps track of which
-# categories are used, and fetches the description for any general requirements
-
-i <- 1
-j <- 1
-k <- 0
-
-while (i <= number_of_categories) {
-  courses_in_category <-
-    read_html <- html_nodes(
-      web_page,
-      paste0(
-        "#ctl00_contentMain_lblContent > ul > li:nth-child(",
-        i,
-        ") > ul > li > a"
-      )
-    ) %>% html_text() %>% str_squish()
-  for (course in courses_in_category) {
-    k <- k + 1
-    if (!grepl("[0-9]", course)) {
-      general_requirement_description[length(general_requirement_description) + 1] <-
-        read_html(web_link) %>% html_node(
-          paste0(
-            "#ctl00_contentMain_lblContent > ul > li:nth-child(" ,
-            i,
-            ") > ul > li:nth-child(",
-            k,
-            ")"
-          )
-        ) %>% html_text() %>% str_squish()
-      general_requirement_index <- j - 1
-    }
-    course_code[j] <- course
-    course_category[j] <- category_names[i]
-    course_category_description[j] <- category_description[i]
-    category_is_used[i] <- TRUE
-    j = j + 1
-  }
-  k <- 0
-  i = i + 1
-}
-
-# Creates a data frame using the course category information fetched above
-
-course_categories <-
-  data.frame(course_code,
-             course_category,
-             course_category_description)
-colnames(course_categories) <-
-  c("Course Code", "Category", "Category Requirement")
-
-# Merges original
-
-waterloo_course_requirements <-
-  merge(waterloo_course_requirements, course_categories, by = "Course Code")
-
-# Course Information ####
+# Course Calendars ####
 
 cs_courses_waterloo <-
   get_text_dataframe(
@@ -429,121 +306,168 @@ mthel_courses_waterloo <-
 cs_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/CS",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(cs_course_credits) <- "Credit Amount"
-cs_courses_waterloo <- cbind(cs_courses_waterloo, cs_course_credits)
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+cs_credit_dataframe <- data.frame(cs_course_credits)
+colnames(cs_credit_dataframe) <- "Credit Amount"
+cs_courses_waterloo <-
+  cbind(cs_courses_waterloo, cs_credit_dataframe)
 
 math_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/MATH",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(math_course_credits) <- "Credit Amount"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+math_credit_dataframe <- data.frame(math_course_credits)
+colnames(math_credit_dataframe) <- "Credit Amount"
 math_courses_waterloo <-
-  cbind(math_courses_waterloo, math_course_credits)
+  cbind(math_courses_waterloo, math_credit_dataframe)
 
 stat_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/STAT",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(stat_course_credits) <- "Credit Amount"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+stat_credit_dataframe <- data.frame(stat_course_credits)
+colnames(stat_credit_dataframe) <- "Credit Amount"
 stat_courses_waterloo <-
-  cbind(stat_courses_waterloo, stat_course_credits)
+  cbind(stat_courses_waterloo, stat_credit_dataframe)
 
 engl_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/ENGL",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(engl_course_credits) <- "Credit Amount"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+engl_credit_dataframe <- data.frame(engl_course_credits)
+colnames(engl_credit_dataframe) <- "Credit Amount"
 engl_courses_waterloo <-
-  cbind(engl_courses_waterloo, engl_course_credits)
+  cbind(engl_courses_waterloo, engl_credit_dataframe)
 
 mthel_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/MTHEL",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(mthel_course_credits) <- "Credit Amount"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+mthel_credit_dataframe <- data.frame(mthel_course_credits)
+colnames(mthel_credit_dataframe) <- "Credit Amount"
 mthel_courses_waterloo <-
-  cbind(mthel_courses_waterloo, mthel_course_credits)
+  cbind(mthel_courses_waterloo, mthel_credit_dataframe)
 
 amath_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/AMATH",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% data.frame()
-colnames(amath_course_credits) <- "Credit Amount"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+amath_credit_dataframe <- data.frame(amath_course_credits)
+colnames(amath_credit_dataframe) <- "Credit Amount"
 amath_courses_waterloo <-
-  cbind(amath_courses_waterloo, amath_course_credits)
+  cbind(amath_courses_waterloo, amath_credit_dataframe)
 
-amath <-
-  merge(waterloo_course_requirements, amath_courses_waterloo, by = "Course Code")
-math <-
-  merge(waterloo_course_requirements, math_courses_waterloo, by = "Course Code")
-cs <-
-  merge(waterloo_course_requirements, cs_courses_waterloo, by = "Course Code")
-stat <-
-  merge(waterloo_course_requirements, stat_courses_waterloo, by = "Course Code")
-engl <-
-  merge(waterloo_course_requirements, engl_courses_waterloo, by = "Course Code")
-mthel <-
-  merge(waterloo_course_requirements, mthel_courses_waterloo, by = "Course Code")
-# Reorganize Information ####
-requirements <- rbind(amath, math, cs, stat, engl, mthel)
-requirements <-
-  requirements[, c(
-    "Course Code",
-    "Course Name",
-    "Course Description",
-    "Category",
-    "Category Requirement",
-    "Credit Amount",
-    "Prerequisite",
-    "Antirequisite",
-    "Corequisite",
-    "Note",
-    "Other Information",
-    "Lecture",
-    "Lab",
-    "Test Slot",
-    "Tutorial",
-    "Project",
-    "Reading",
-    "Studio"
-  )]
+course_calendar <-
+  rbind(
+    cs_courses_waterloo,
+    math_courses_waterloo,
+    stat_courses_waterloo,
+    engl_courses_waterloo,
+    mthel_courses_waterloo,
+    amath_courses_waterloo
+  )
 
-# General Requirements ####
-# Adding of general requirements/categories to the course dataframe
+# Program Requirements ####
 
-i <- 1
-for (item in general_requirement_index) {
-  general_requirement <- rep(NA, ncol(requirements))
-  general_requirement[1] <-
-    waterloo_course_requirements$`Course Code`[item]
-  general_requirement[2] <- "Other"
-  general_requirement[3] <- general_requirement_description[i]
-  general_requirement[4] <-
-    waterloo_course_requirements$Category[item]
-  general_requirement[5] <-
-    waterloo_course_requirements$`Category Requirement`[item]
-  requirements <- rbind(requirements, general_requirement)
-  i <- i + 1
+program_link <-
+  "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
+program_page <- read_html(program_link)
+
+category_description <-
+  html_elements(program_page, "#ctl00_contentMain_lblContent > ul > li") %>% html_text() %>% str_squish()
+subcategory_items <-
+  html_elements(program_page, "#ctl00_contentMain_lblContent > ul > li > ul > li") %>% html_text() %>% str_squish()
+for (item in subcategory_items) {
+  category_description <-
+    str_remove_all(category_description, fixed(item)) %>% str_squish()
 }
+num_categories <- length(category_description)
+category <- vector(mode = "character", length = num_categories)
+category_min <- vector(mode = "numeric", length = num_categories)
+category_max <- vector(mode = "numeric", length = num_categories)
+isCore <- vector(mode = "logical", length = num_categories)
 
+# Need to find best way to get categories
 i <- 1
-for (item in category_is_used) {
-  if (!item) {
-    other_category <- rep(NA, ncol(requirements))
-    other_category[1] <- "Category Requirement"
-    other_category[2] <- "Other Requirement"
-    other_category[3] <- category_description[i]
-    other_category[4] <- category_names[i]
-    other_category[5] <- category_description[i]
-    requirements <- rbind(requirements, other_category)
+other_requirements <- ""
+description <- ""
+for (item in category_description) {
+  # Get category requirements
+  category_requirements <-
+    html_nodes(
+      program_page,
+      paste0(
+        "#ctl00_contentMain_lblContent > ul > li:nth-child(",
+        i,
+        ") > ul > li"
+      )
+    ) %>%
+    html_text %>% str_squish()
+  description <- paste0(item, ": ")
+  other_requirements <-
+    grep(
+      "((O|o)ne)|((T|t)wo)|((T|t)hree)|((F|f)our)|((A|a)ll)",
+      category_requirements,
+      value = TRUE
+    ) %>% paste(collapse = ", ")
+  courses_in_category <-
+    str_extract_all(category_requirements,
+                    "(CS|MATH|STAT|AMATH|ENGL).([0-9]{3})([A-Z]?)") %>% unlist() %>% str_squish()
+  courses_collapsed <- paste(courses_in_category, collapse = ", ")
+  category_description[i] <-
+    paste0(description, courses_collapsed, other_requirements)
+  category[i] <- paste0("Category G", i)
+  credit <-
+    filter(course_calendar, `Course Code` %in% courses_in_category) %>% select(`Credit Amount`) %>% .[[1]] %>% as.numeric() %>% sort(decreasing = TRUE)
+  if (length(credit) == 0)
+    credit = rep(10000, 5)
+  sum_credit <- sum(credit)
+  if (grepl("(O|o)ne", item)) {
+    category_max[i] <- min(max(credit), 3.0)
+    category_min[i] <- min(min(credit), 3.0)
+  } else if (grepl("(T|t)wo", item)) {
+    category_max[i] <- min((credit[1] + credit[2]), 6.0)
+    category_min[i] <-
+      min((credit[length(credit)] + credit[length(credit) - 1]), 6.0)
+  } else if (grepl("(A|a)ll", item)) {
+    category_max[i] <- sum_credit
+    category_min[i] <- sum_credit
+  } else if (grepl("(T|t)hree", item)) {
+    category_max[i] <- min((credit[1] + credit[2] + credit[3]), 9.0)
+    category_min[i] <-
+      min((credit[length(credit)] + credit[length(credit) - 1] + credit[length(credit) - 2]), 9.0)
+  } else if (grepl("(F|f)our", item)) {
+    category_max[i] <-
+      min((credit[1] + credit[2] + credit[3] + credit[4]), 12.0)
+    category_min[i] <-
+      min((credit[length(credit)] + credit[length(credit) - 1] + credit[length(credit) - 2] + credit[length(credit) - 3]), 12.0)
+  } else{
+    category_max[i] <- -1.0
+    category_min[i] <- -1.0
   }
+  if (sum_credit == category_max[i] & sum_credit == category_min[i])
+    isCore[i] = TRUE
   i <- i + 1
+  other_requirements <- ""
 }
+
+program_requirements <-
+  data.frame(category,
+             category_description,
+             category_min,
+             category_max,
+             isCore)
+colnames(program_requirements) <- c(
+  "Requirement Category",
+  "Category Description",
+  "Category Minimum Credit Amount",
+  "Category Maximum Credit Amount",
+  "Core Course"
+)
 
 # Write CSV Files ####
 
-# write.csv(requirements, "University of Waterloo Statistics Program Requirements.csv")
+# write.csv(program_requirements, "University of Waterloo Statistics Program Requirements.csv")
 # write.csv(cs_courses_waterloo, "University of Waterloo Computer Science Course Calendar.csv")
 # write.csv(amath_courses_waterloo, "University of Waterloo Applied Mathematics Course Calendar.csv")
 # write.csv(mthel_courses_waterloo, "University of Waterloo Mathematics Electives Course Calendar.csv")
