@@ -306,51 +306,66 @@ mthel_courses_waterloo <-
 cs_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/CS",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6 %>% data.frame()
-colnames(cs_course_credits) <- "Credit Amount"
-cs_courses_waterloo <- cbind(cs_courses_waterloo, cs_course_credits)
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+cs_credit_dataframe <- data.frame(cs_course_credits)
+colnames(cs_credit_dataframe) <- "Credit Amount"
+cs_courses_waterloo <-
+  cbind(cs_courses_waterloo, cs_credit_dataframe)
 
 math_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/MATH",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6 %>% data.frame()
-colnames(math_course_credits) <- "Credit Amount"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+math_credit_dataframe <- data.frame(math_course_credits)
+colnames(math_credit_dataframe) <- "Credit Amount"
 math_courses_waterloo <-
-  cbind(math_courses_waterloo, math_course_credits)
+  cbind(math_courses_waterloo, math_credit_dataframe)
 
 stat_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/STAT",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6 %>% data.frame()
-colnames(stat_course_credits) <- "Credit Amount"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+stat_credit_dataframe <- data.frame(stat_course_credits)
+colnames(stat_credit_dataframe) <- "Credit Amount"
 stat_courses_waterloo <-
-  cbind(stat_courses_waterloo, stat_course_credits)
+  cbind(stat_courses_waterloo, stat_credit_dataframe)
 
 engl_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/ENGL",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6 %>% data.frame()
-colnames(engl_course_credits) <- "Credit Amount"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+engl_credit_dataframe <- data.frame(engl_course_credits)
+colnames(engl_credit_dataframe) <- "Credit Amount"
 engl_courses_waterloo <-
-  cbind(engl_courses_waterloo, engl_course_credits)
+  cbind(engl_courses_waterloo, engl_credit_dataframe)
 
 mthel_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/MTHEL",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6 %>% data.frame()
-colnames(mthel_course_credits) <- "Credit Amount"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+mthel_credit_dataframe <- data.frame(mthel_course_credits)
+colnames(mthel_credit_dataframe) <- "Credit Amount"
 mthel_courses_waterloo <-
-  cbind(mthel_courses_waterloo, mthel_course_credits)
+  cbind(mthel_courses_waterloo, mthel_credit_dataframe)
 
 amath_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/AMATH",
   ".divTableCell:nth-child(1) strong"
-) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6 %>% data.frame()
-colnames(amath_course_credits) <- "Credit Amount"
+) %>% sub(".*([0-9]\\.[0-9]+)", "\\1", .) %>% as.numeric() * 6
+amath_credit_dataframe <- data.frame(amath_course_credits)
+colnames(amath_credit_dataframe) <- "Credit Amount"
 amath_courses_waterloo <-
-  cbind(amath_courses_waterloo, amath_course_credits)
+  cbind(amath_courses_waterloo, amath_credit_dataframe)
 
-course_calendar <- rbind(cs_courses_waterloo, math_courses_waterloo, stat_courses_waterloo, engl_courses_waterloo, mthel_courses_waterloo, amath_courses_waterloo)
+course_calendar <-
+  rbind(
+    cs_courses_waterloo,
+    math_courses_waterloo,
+    stat_courses_waterloo,
+    engl_courses_waterloo,
+    mthel_courses_waterloo,
+    amath_courses_waterloo
+  )
 
 # Program Requirements ####
 
@@ -358,10 +373,13 @@ program_link <-
   "http://ugradcalendar.uwaterloo.ca/page/MATH-Statistics1"
 program_page <- read_html(program_link)
 
-category_description <- html_elements(program_page, "#ctl00_contentMain_lblContent > ul > li") %>% html_text() %>% str_squish()
-subcategory_items <- html_elements(program_page, "#ctl00_contentMain_lblContent > ul > li > ul > li") %>% html_text() %>% str_squish()
-for(item in subcategory_items){
-  category_description <- str_remove_all(category_description, fixed(item)) %>% str_squish()
+category_description <-
+  html_elements(program_page, "#ctl00_contentMain_lblContent > ul > li") %>% html_text() %>% str_squish()
+subcategory_items <-
+  html_elements(program_page, "#ctl00_contentMain_lblContent > ul > li > ul > li") %>% html_text() %>% str_squish()
+for (item in subcategory_items) {
+  category_description <-
+    str_remove_all(category_description, fixed(item)) %>% str_squish()
 }
 num_categories <- length(category_description)
 category <- vector(mode = "character", length = num_categories)
@@ -386,31 +404,43 @@ for (item in category_description) {
     ) %>%
     html_text %>% str_squish()
   description <- paste0(item, ": ")
-  other_requirements <- grep("((O|o)ne)|((T|t)wo)|((T|t)hree)|((F|f)our)|((A|a)ll)", category_requirements, value = TRUE) %>% paste(collapse = ", ")
-  courses_in_category <-  str_extract_all(category_requirements, "(CS|MATH|STAT|AMATH|ENGL).([0-9]{3})([A-Z]?)") %>% unlist() %>% str_squish()
+  other_requirements <-
+    grep(
+      "((O|o)ne)|((T|t)wo)|((T|t)hree)|((F|f)our)|((A|a)ll)",
+      category_requirements,
+      value = TRUE
+    ) %>% paste(collapse = ", ")
+  courses_in_category <-
+    str_extract_all(category_requirements,
+                    "(CS|MATH|STAT|AMATH|ENGL).([0-9]{3})([A-Z]?)") %>% unlist() %>% str_squish()
   courses_collapsed <- paste(courses_in_category, collapse = ", ")
-  category_description[i] <-paste0(description, courses_collapsed, other_requirements)
+  category_description[i] <-
+    paste0(description, courses_collapsed, other_requirements)
   category[i] <- paste0("Category G", i)
   credit <-
     filter(course_calendar, `Course Code` %in% courses_in_category) %>% select(`Credit Amount`) %>% .[[1]] %>% as.numeric() %>% sort(decreasing = TRUE)
-  if(length(credit) == 0)
-    credit = 100000
+  if (length(credit) == 0)
+    credit = rep(10000, 5)
   sum_credit <- sum(credit)
   if (grepl("(O|o)ne", item)) {
     category_max[i] <- min(max(credit), 3.0)
     category_min[i] <- min(min(credit), 3.0)
   } else if (grepl("(T|t)wo", item)) {
     category_max[i] <- min((credit[1] + credit[2]), 6.0)
-    category_min[i] <- min((credit[length(credit)] + credit[length(credit) - 1]), 6.0)
+    category_min[i] <-
+      min((credit[length(credit)] + credit[length(credit) - 1]), 6.0)
   } else if (grepl("(A|a)ll", item)) {
     category_max[i] <- sum_credit
     category_min[i] <- sum_credit
-  } else if(grepl("(T|t)hree", item)){
+  } else if (grepl("(T|t)hree", item)) {
     category_max[i] <- min((credit[1] + credit[2] + credit[3]), 9.0)
-    category_min[i] <- min((credit[length(credit)] + credit[length(credit) - 1] + credit[length(credit) - 2]), 9.0)
-  } else if(grepl("(F|f)our", item)){
-    category_max[i] <- min((credit[1] + credit[2] + credit[3] + credit[4]), 12.0)
-    category_min[i] <- min((credit[length(credit)] + credit[length(credit) - 1] + credit[length(credit) - 2] + credit[length(credit) - 3]), 12.0)
+    category_min[i] <-
+      min((credit[length(credit)] + credit[length(credit) - 1] + credit[length(credit) - 2]), 9.0)
+  } else if (grepl("(F|f)our", item)) {
+    category_max[i] <-
+      min((credit[1] + credit[2] + credit[3] + credit[4]), 12.0)
+    category_min[i] <-
+      min((credit[length(credit)] + credit[length(credit) - 1] + credit[length(credit) - 2] + credit[length(credit) - 3]), 12.0)
   } else{
     category_max[i] <- -1.0
     category_min[i] <- -1.0
@@ -420,8 +450,6 @@ for (item in category_description) {
   i <- i + 1
   other_requirements <- ""
 }
-
-# test <- html_nodes(program_page, "#ctl00_contentMain_lblContent > ul > li:root") %>% html_text()
 
 program_requirements <-
   data.frame(category,
@@ -439,7 +467,7 @@ colnames(program_requirements) <- c(
 
 # Write CSV Files ####
 
-# write.csv(requirements, "University of Waterloo Statistics Program Requirements.csv")
+# write.csv(program_requirements, "University of Waterloo Statistics Program Requirements.csv")
 # write.csv(cs_courses_waterloo, "University of Waterloo Computer Science Course Calendar.csv")
 # write.csv(amath_courses_waterloo, "University of Waterloo Applied Mathematics Course Calendar.csv")
 # write.csv(mthel_courses_waterloo, "University of Waterloo Mathematics Electives Course Calendar.csv")
