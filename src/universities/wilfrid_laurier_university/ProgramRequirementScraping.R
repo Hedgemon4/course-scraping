@@ -18,17 +18,22 @@ calendar_link <-
 calendar_page <- read_html(calendar_link)
 
 # Want to get concentration courses as well
-concentration_link <- "https://academic-calendar.wlu.ca/program.php?cal=1&d=2589&p=5764&s=1034&y=85"
+concentration_link <-
+  "https://academic-calendar.wlu.ca/program.php?cal=1&d=2589&p=5764&s=1034&y=85"
 concentration_page <- read_html(concentration_link)
 
-link_text <- c((html_nodes(calendar_page, "a") %>% html_text()), (html_nodes(concentration_page, "a")) %>% html_text())
-links <- c((html_nodes(calendar_page, "a") %>% html_attr("href")), (html_nodes(concentration_page, "a") %>% html_attr("href")))
+link_text <-
+  c((html_nodes(calendar_page, "a") %>% html_text()), (html_nodes(concentration_page, "a")) %>% html_text())
+links <-
+  c((html_nodes(calendar_page, "a") %>% html_attr("href")), (html_nodes(concentration_page, "a") %>% html_attr("href")))
 course_indices <-
   grep("(CP|ST|MA|DATA|EC|BU|ENTR)([0-9]{3})", link_text)
 course_codes <- link_text[course_indices] %>% unique()
 course_links <- links[course_indices] %>% unique()
 
 calendar_main_link <- "https://academic-calendar.wlu.ca/"
+
+closeAllConnections()
 
 num_courses <- length(course_codes)
 course_name <- vector("character", num_courses)
@@ -57,7 +62,8 @@ for (item in course_links) {
   if (course_description[i] == "")
     course_description[i] <-
     html_nodes(course_page, ".content div span") %>% html_text() %>% paste(collapse = "")
-  hours[i] <- html_nodes(course_page, ".hours") %>% html_text() %>% paste(collapse = "")
+  hours[i] <-
+    html_nodes(course_page, ".hours") %>% html_text() %>% paste(collapse = "")
   lecture[i] <- grepl("Lecture", hours[i])
   lab[i] <- grepl("Lab", hours[i])
   tutorial[i] <- grepl("Tutorial", hours[i])
@@ -120,7 +126,8 @@ category_description <-
   html_nodes(requirement_page, "ul:nth-child(4) li") %>% html_text()
 
 num_categories <- length(category_description)
-requirement_category <- vector(mode = "character", length = num_categories)
+requirement_category <-
+  vector(mode = "character", length = num_categories)
 category_min <- vector(mode = "numeric", length = num_categories)
 category_max <- vector(mode = "numeric", length = num_categories)
 isCore <- vector(mode = "logical", length = num_categories)
@@ -192,21 +199,34 @@ i <- 1
 j <- 11
 k <- 0
 l <- 1
-while(j < 17){
-  if(j %% 2 == 1){
+last_category <- -1
+while (j < 18) {
+  if (j %% 2 == 1) {
     # TODO: Calculate previous category min/max
+    if (last_category != -1) {
+      category_min[last_category] <-
+        sum(category_min[rep((last_category + 1):(i - 1))])
+      category_max[last_category] <-
+        sum(category_max[rep((last_category + 1):(i - 1))])
+    }
+    if (j == 17)
+      break
     # Get new category information
-    category_description[i] <- html_nodes(requirement_page, paste0("p:nth-child(", i, ") strong")) %>% 
+    category_description[i] <-
+      html_nodes(requirement_page, paste0("p:nth-child(", j, ") strong")) %>%
       html_text()
     k <- k + 1
     l <- 1
     requirement_category[i] <- paste0("Category S", k)
     isCore[i] <- NA
+    last_category <- i
     i <- i + 1
-  }else{
-    courses_in_subcategory <- html_nodes(requirement_page, paste0("#text-1 > ul:nth-child(", i, ") > li")) %>% 
+  } else{
+    requirements_in_subcategory <-
+      html_nodes(requirement_page,
+                 paste0("#text-1 > ul:nth-child(", j, ") > li")) %>%
       html_text()
-    for(item in courses_in_subcategory){
+    for (item in requirements_in_subcategory) {
       requirement_category[i] <- paste0("Category S", k, alphabets[l])
       z <- 1
       for (credit in credit_values) {
@@ -214,8 +234,28 @@ while(j < 17){
           str_replace_all(item, credit, new_credit_values[z])
         z <- i + 1
       }
-      
       category_description[i] <- item
+      if (grepl("((O|o)ne\\s)|(3.*credit)", item)) {
+        category_max[i] <- 3
+        category_min[i] <- 3
+        isCore[i] <- FALSE
+      } else if (grepl("((T|t)wo\\s)|(6.*credit)", item)) {
+        category_max[i] <- 6
+        category_min[i] <- 6
+        isCore[i] = FALSE
+      } else{
+        courses_in_subcategory <-
+          str_extract_all(item, "(CP|ST|MA|DATA|EC|BU|ENTR)([0-9]{3})") %>% unlist()
+        category_description[i] <-
+          paste(courses_in_subcategory, collapse = " ")
+        credits <-
+          filter(course_information,
+                 `Course Code` %in% courses_in_subcategory) %>% select(`Credit Amount`) %>% sum()
+        category_max[i] <- credits
+        category_min[i] <- credits
+        isCore[i] = ((category_max[i] == category_min[i]) &
+                       (category_max[i] == sum(credits)))
+      }
       l <- l + 1
       i <- i + 1
     }
@@ -223,11 +263,30 @@ while(j < 17){
   j <- j + 1
 }
 
-test1 <- html_nodes(requirement_page, "p:nth-child(11) strong") %>% html_text()
-test2 <- html_nodes(requirement_page, "#text-1 > ul:nth-child(12) > li") %>% html_text()
-  
+concentration_requirements <-
+  data.frame(requirement_category,
+             category_description,
+             category_min,
+             category_max,
+             isCore)
+colnames(concentration_requirements) <- c(
+  "Requirement Category",
+  "Category Description",
+  "Category Minimum Credit Amount",
+  "Category Maximum Credit Amount",
+  "Core Course"
+)
+
 # Write CSV Files ####
-# write.csv(program_requirements, "Wilfrid Laurier University Data Science Program Requirements.csv")
-# write.csv(course_information, "Wilfrid Laurier University Required Courses.csv")
+# write.csv(
+#   program_requirements,
+#   "Wilfrid Laurier University Data Science Program Requirements.csv"
+# )
+# write.csv(course_information,
+#           "Wilfrid Laurier University Required Courses.csv")
+# write.csv(
+#   concentration_requirements,
+#   "Wilfrid Laurier University Data Science Program Specialization Requirements.csv"
+# )
 
 closeAllConnections()
