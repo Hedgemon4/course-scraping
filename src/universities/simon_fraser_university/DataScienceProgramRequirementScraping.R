@@ -795,7 +795,7 @@ program_information <-
              ".course > a, #page-content > section > p, .course+ h3") %>%
   html_text() %>% str_squish() %>%
   str_extract_all(
-    "((BUS|CMPT|MACM|DATA|MATH|STAT|ECON)\\s([0-9]{3}))|(Upper\\sDivision.*)|(.*Students\\scomplete.*)|((one|both|all)\\sof.*)"
+    "((BUS|CMPT|MACM|DATA|MATH|STAT|ECON)\\s([0-9]{3})([A-Z])?)|(Upper\\sDivision.*)|(.*Students\\scomplete.*)|((one|both|all)\\sof.*)"
   ) %>%
   unlist() %>% str_remove_all("Students\\scomplete.*units.*") %>% stri_remove_empty()
 
@@ -815,18 +815,24 @@ isCore <- vector(mode = "logical")
 letter <- "L"
 current_category <- ""
 courses_in_category <- ""
+index <- 1
+continue <- TRUE
+test <- list()
 
 i <- 0
 j <- 0
 k <- 1
-for (item in required_courses) {
-  if (grepl("Upper", item)) {
+while (continue) {
+  if (grepl("Upper", required_courses[index])) {
     letter <- "U"
     j <- 1
-  } else if (grepl("((BUS|CMPT|MACM|DATA|MATH|STAT|ECON)\\s([0-9]{3}))",
-                   item)) {
-    current_category <- paste(current_category, item, ", ", sep = "")
-    courses_in_category[k] <- item
+  } else if (grepl(
+    "((BUS|CMPT|MACM|DATA|MATH|STAT|ECON)\\s([0-9]{3})([A-Z])?)",
+    required_courses[index]
+  )) {
+    current_category <-
+      paste(current_category, required_courses[index], ", ", sep = "")
+    courses_in_category[k] <- required_courses[index]
     k <- k + 1
   } else {
     if (current_category != "") {
@@ -834,33 +840,38 @@ for (item in required_courses) {
       category_description[i] <- current_category
       credits <-
         filter(course_calendar, `Course Code` %in% courses_in_category) %>%
-        select(`Credit Amount`) %>% as.vector %>% unlist()
-      if (grepl("(A|a)ll", current_category)) {
-        category_min[i] <- sum(credits)
-        category_max[i] <- sum(credits)
-        isCore[i] = TRUE
-      } else if (grepl("(O|o)ne", current_category)) {
+        select(`Credit Amount`) %>% as.vector %>% unlist() %>% unname()
+      if (grepl("(O|o)ne", current_category)) {
         category_min[i] <- min(credits)
         category_max[i] <- max(credits)
         isCore[i] <-
-          (category_max == category_min) &
-          (category_max == sum(credits))
-      } else if (grepl("(T|t)wo", current_category)) {
+          ((category_max[i] == category_min[i]) &
+             (category_max[i] == sum(credits)))
+      } else if (grepl("(B|b)oth", current_category)) {
         credits <- sort(credits)
         category_min[i] <- credits[1] + credits[2]
         category_max[i] <-
           credits[length(credits)] + credits[length(credits) - 1]
         isCore[i] <-
-          (category_max == category_min) &
-          (category_max == sum(credits))
+          ((category_max[i] == category_min[i]) &
+             (category_max[i] == sum(credits)))
+      } else {
+        category_min[i] <- sum(credits)
+        category_max[i] <- sum(credits)
+        isCore[i] = TRUE
       }
     }
+    if (is.na(required_courses[index + 1])) {
+      break
+    }
     current_category <-
-      item %>% str_to_sentence() %>% paste0(., ": ")
+      required_courses[index] %>% str_to_sentence() %>% paste0(., ": ")
+    courses_in_category <- ""
     i <- i + 1
     j <- j + 1
     k <- 1
   }
+  index <- index + 1
 }
 
 program_requirements <-
@@ -869,3 +880,20 @@ program_requirements <-
              category_min,
              category_max,
              isCore)
+colnames(program_requirements) <- c(
+  "Requirement Category",
+  "Category Description",
+  "Category Minimum",
+  "Category Maximum",
+  "Core Requirement"
+)
+
+# Write CSV Files
+# write.csv(program_requirements, "Simon Fraser University Data Science Program Requirements.csv")
+# write.csv(business_course_calendar, "Simon Fraser University Business Course Calendar.csv")
+# write.csv(computer_science_course_calendar, "Simon Fraser University Computer Science Course Calendar.csv")
+# write.csv(math_and_cs_course_calendar, "Simon Fraser University Math and Computer Science Course Calendar.csv")
+# write.csv(math_course_calendar, "Simon Fraser University Math Course Calendar.csv")
+# write.csv(data_course_calendar, "Simon Fraser University Data Science Course Calendar.csv")
+# write.csv(econ_course_calendar, "Simon Fraser University Economics Course Calendar.csv")
+# write.csv(stat_course_calendar, "Simon Fraser University Statistics Course Calendar.csv")
