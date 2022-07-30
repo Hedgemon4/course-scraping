@@ -14,24 +14,27 @@ source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 # Business Courses ####
 
 business_link <-
-  curl("https://academic-calendar.wlu.ca/department.php?cal=1&d=2617&s=1036&y=85#Course_Offerings", 
-       handle = curl::new_handle("useragent" = "Mozilla/5.0"))
+  curl(
+    "https://academic-calendar.wlu.ca/department.php?cal=1&d=2617&s=1036&y=85#Course_Offerings",
+    handle = curl::new_handle("useragent" = "Mozilla/5.0")
+  )
 business_page <- read_html(business_link)
 
-business_calendar <-
+business_table <-
   html_nodes(business_page, "#main > div.content > div > table") %>%
   html_table() %>% .[[1]]
-colnames(business_calendar) <-
+colnames(business_table) <-
   c("Course Code", "Course Name", "Credit Amount")
 
 business_course_links <-
   html_nodes(business_page, "#main > div.content > div > table > tr > td > a") %>%
   html_attr("href")
 
-num_business_courses <- nrow(business_calendar)
+num_business_courses <- nrow(business_table)
 hours <- vector(mode = "character", num_business_courses)
 description <- vector(mode = "character", num_business_courses)
-course_information <- vector(mode = "character", num_business_courses)
+course_information <-
+  vector(mode = "character", num_business_courses)
 lecture <- vector(mode = "logical", num_business_courses)
 lab <- vector(mode = "logical", num_business_courses)
 tutorial <- vector(mode = "logical", num_business_courses)
@@ -44,7 +47,10 @@ i <- 1
 while (i <= num_business_courses) {
   course_page <-
     read_html(curl(
-      paste0("https://academic-calendar.wlu.ca/", business_course_links[i]),
+      paste0(
+        "https://academic-calendar.wlu.ca/",
+        business_course_links[i]
+      ),
       handle = curl::new_handle("useragent" = "Mozilla/5.0")
     ))
   hours[i] <-
@@ -70,18 +76,36 @@ while (i <= num_business_courses) {
 }
 
 closeAllConnections()
-business_credits <- select(business_calendar, `Credit Amount`) %>% unlist() %>% . * 6 
+business_credits <-
+  select(business_table, `Credit Amount`) %>% unlist() %>% unname() * 6
 
-business_calendar <- cbind(business_calendar, description, antireq, coreq, 
-                           prereq, hours, lecture, lab, tutorial, note)
-business_calendar <- select(business_calendar, `Course Code`, `Course Name`,
-                            description,
-                            `Credit Amount`,
-                            antireq,
-                            coreq,
-                            prereq,
-                            hours,
-                            lecture,
-                            lab,
-                            tutorial,
-                            note)
+business_calendar <-
+  cbind(
+    business_table$`Course Code`,
+    business_table$`Course Name`,
+    description,
+    business_credits,
+    antireq,
+    coreq,
+    prereq,
+    hours,
+    lecture,
+    lab,
+    tutorial,
+    note
+  )
+
+colnames(business_calendar) <-  c(
+  "Course Code",
+  "Course Name",
+  "Course Description",
+  "Credit Amount",
+  "Antirequisite",
+  "Corequisite",
+  "Prerequisite",
+  "Hours",
+  "Lecture",
+  "Lab",
+  "Tutorial",
+  "Note"
+)
