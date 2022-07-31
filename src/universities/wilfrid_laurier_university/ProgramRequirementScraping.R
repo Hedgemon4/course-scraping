@@ -6,6 +6,7 @@ library(dplyr)
 library(stringr)
 library(stringi)
 library(tidyverse)
+library(curl)
 
 # Source for functions
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
@@ -13,15 +14,24 @@ source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 options(timeout = max(1000000, getOption("timeout")))
 
 # Course Information ####
-calendar_link <-
-  "https://academic-calendar.wlu.ca/program.php?cal=1&d=2589&p=5763&s=1034&y=85"
-calendar_page <- read_html(calendar_link)
+
+calendar_page <-
+  read_html(
+    curl(
+      "https://academic-calendar.wlu.ca/program.php?cal=1&d=2589&p=5763&s=1034&y=85",
+      handle = curl::new_handle("useragent" = "Mozilla/5.0")
+    )
+  )
 
 # Want to get concentration courses as well
-concentration_link <-
-  "https://academic-calendar.wlu.ca/program.php?cal=1&d=2589&p=5764&s=1034&y=85"
-concentration_page <- read_html(concentration_link)
 
+concentration_page <-
+  read_html(
+    curl(
+      "https://academic-calendar.wlu.ca/program.php?cal=1&d=2589&p=5764&s=1034&y=85",
+      handle = curl::new_handle("useragent" = "Mozilla/5.0")
+    )
+  )
 link_text <-
   c((html_nodes(calendar_page, "a") %>% html_text()), (html_nodes(concentration_page, "a")) %>% html_text())
 links <-
@@ -30,8 +40,6 @@ course_indices <-
   grep("(CP|ST|MA|DATA|EC|BU|ENTR)([0-9]{3})", link_text)
 course_codes <- link_text[course_indices] %>% unique()
 course_links <- links[course_indices] %>% unique()
-
-calendar_main_link <- "https://academic-calendar.wlu.ca/"
 
 closeAllConnections()
 
@@ -50,7 +58,11 @@ hours <- vector("character", num_courses)
 
 i <- 1
 for (item in course_links) {
-  course_page <- read_html(paste0(calendar_main_link, item))
+  course_page <-
+    read_html(curl(
+      paste0("https://academic-calendar.wlu.ca/", item),
+      handle = curl::new_handle("useragent" = "Mozilla/5.0")
+    ))
   course_name[i] <-
     html_nodes(course_page, "span:nth-child(2)") %>% html_text()
   credit_amount[i] <-
@@ -68,17 +80,19 @@ for (item in course_links) {
   lab[i] <- grepl("Lab", hours[i])
   tutorial[i] <- grepl("Tutorial", hours[i])
   other_info <-
-    html_nodes(course_page, "#main > div.content > div.reqs > dl") %>%
-    html_text() %>% paste("") %>% str_split("\\.|\\[") %>% unlist()
+    html_nodes(
+      course_page,
+      "#main > div.content > div.reqs > dl > dt, #main > div.content > div.reqs > dl > dd.required"
+    ) %>%
+    html_text() %>% str_squish()
   prereq[i] <-
-    grep("Prerequisites", other_info, value = TRUE) %>% paste0("") %>% str_remove("Prerequisites")
+    grep("Prerequisites", other_info) %>% +1 %>% other_info[.] %>% stri_remove_na() %>% paste0(collapse = "")
   antireq[i] <-
-    grep("Exclusions", other_info, value = TRUE) %>% paste0("") %>% str_remove("Exclusions")
+    grep("Exclusions", other_info) %>% +1 %>% other_info[.] %>% stri_remove_na() %>% paste0(collapse = "")
   coreq[i] <-
-    grep("Co\\-requisites", other_info, value = TRUE) %>% paste0("") %>% str_remove("Co\\-requisites")
+    grep("Co\\-requisites", other_info) %>% +1 %>% other_info[.] %>% stri_remove_na() %>% paste0(collapse = "")
   note[i] <-
-    grep("Note(s|:)", other_info, value = TRUE) %>% paste0("") %>% str_remove("Note(s|:)") %>%
-    str_squish()
+    grep("Note(s|)", other_info) %>% +1 %>% other_info[.] %>% stri_remove_na() %>% paste0(collapse = "")
   i <- i + 1
 }
 
@@ -118,12 +132,30 @@ colnames(course_information) <-
 closeAllConnections()
 
 # Requirement Information ####
-requirement_link <-
-  "https://students.wlu.ca/programs/science/data-science/program-requirements.html"
-requirement_page <- read_html(requirement_link)
+
+requirement_page <-
+  read_html(
+    curl(
+      "https://students.wlu.ca/programs/science/data-science/program-requirements.html",
+      handle = curl::new_handle("useragent" = "Mozilla/5.0")
+    )
+  )
 
 category_description <-
   html_nodes(requirement_page, "ul:nth-child(4) li") %>% html_text()
+
+category_description <-
+  str_extract_all(
+    category_description,
+    "(^(?:BU|CP|ENTR|DATA|MA|ST)[0-9]{3})|(\\sor\\s(?:BU|CP|ENTR|DATA|MA|ST)[0-9]{3})|([0-9].*)"
+  ) %>%
+  unlist()
+indices <-
+  grep("(\\sor\\s(?:BU|CP|ENTR|DATA|MA|ST)[0-9]{3})",
+       category_description)
+category_description[(indices - 1)] <-
+  paste0(category_description[(indices - 1)], category_description[indices])
+category_description <- category_description[-indices]
 
 num_categories <- length(category_description)
 requirement_category <-
@@ -278,16 +310,14 @@ colnames(concentration_requirements) <- c(
 )
 
 # Write CSV Files ####
+
 # write.csv(
 #   program_requirements,
 #   "Wilfrid Laurier University Data Science Program Requirements.csv"
 # )
-# write.csv(course_information,
-#           "Wilfrid Laurier University Required Courses.csv")
 # write.csv(
 #   concentration_requirements,
 #   "Wilfrid Laurier University Data Science Program Specialization Requirements.csv"
 # )
 
 closeAllConnections()
-
