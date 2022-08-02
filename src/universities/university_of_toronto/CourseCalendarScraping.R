@@ -309,3 +309,161 @@ colnames(math_course_calendar) <-
     "Delivery Format",
     "Note"
   )
+
+# Statistics Course Calendar ####
+
+# Read webpage with course information
+stat_page <-
+  read_html(
+    curl(
+      "https://artsci.calendar.utoronto.ca/section/Statistical-Sciences#courses",
+      handle = curl::new_handle("useragent" = "Mozilla/5.0")
+    )
+  )
+
+# Gets course code and name
+stat_course_title <-
+  html_nodes(
+    stat_page,
+    "#block-fas-content > div > div > div > div.view-footer > div.view.view-courses-view.view-id-courses_view > div.view-content > div > h3"
+  ) %>%
+  html_text()
+stat_course_code <-
+  str_extract_all(stat_course_title, "(?:STA|JSC)[0-9]{3}(Y|H)[0-9]{1}") %>% unlist()
+stat_course_name <-
+  gsub("((?:STA|JSC)[0-9]{3}(?:Y|H)[0-9]{1})(\\s\\-\\s)(.*)",
+       "\\3",
+       stat_course_title) %>%
+  str_squish()
+
+stat_num_courses <- length(stat_course_title)
+
+# Vectors for course information
+stat_course_description <-
+  vector(mode = "character", length = stat_num_courses)
+stat_note <- vector(mode = "character", length = stat_num_courses)
+stat_credit_amount <-
+  vector(mode = "numeric", length = stat_num_courses)
+stat_antireq <-
+  vector(mode = "character", length = stat_num_courses)
+stat_coreq <- vector(mode = "character", length = stat_num_courses)
+stat_prereq <- vector(mode = "character", length = stat_num_courses)
+stat_hours <- vector(mode = "character", length = stat_num_courses)
+stat_mode <- vector(mode = "character", length = stat_num_courses)
+stat_dist <- vector(mode = "character", length = stat_num_courses)
+stat_breadth <-
+  vector(mode = "character", length = stat_num_courses)
+stat_rec_prep <-
+  vector(mode = "character", length = stat_num_courses)
+stat_lecture <- vector(mode = "logical", length = stat_num_courses)
+stat_lab <- vector(mode = "logical", length = stat_num_courses)
+stat_seminar <- vector(mode = "logical", length = stat_num_courses)
+stat_tutorial <- vector(mode = "logical", length = stat_num_courses)
+
+i <- 1
+# The loop scrapes data from each course and sorts the data into the correct vector
+while (i <= stat_num_courses) {
+  stat_course_text <- html_nodes(
+    stat_page,
+    paste0(
+      "#block-fas-content > div > div > div > div.view-footer > div.view.view-courses-view.view-id-courses_view > div.view-content > div:nth-child(",
+      i,
+      ") > div > div"
+    )
+  ) %>%
+    html_text() %>% str_squish() %>% paste(collapse = ". ") %>% str_split("((Note(s|))|(NOTE(S|))):") %>% unlist()
+  stat_course_description[i] <- stat_course_text[1] %>% paste("")
+  stat_note[i] <-
+    if_else(is.na(stat_course_text[2]),
+            "",
+            stat_course_text[2] %>% paste("")) %>%
+    str_squish()
+  stat_credit_amount[i] <-
+    ifelse(grepl("Y", stat_course_code[i]), 6, 3)
+  stat_course_info <- html_nodes(
+    stat_page,
+    paste0(
+      "#block-fas-content > div > div > div > div.view-footer > div.view.view-courses-view.view-id-courses_view > div.view-content > div:nth-child(",
+      i,
+      ") > div > span"
+    )
+  ) %>%
+    html_text() %>% str_squish()
+  stat_antireq[i] <-
+    grep("Exclusion:", stat_course_info, value = TRUE) %>% paste0(collapse = "") %>%
+    str_remove("Exclusion:") %>% str_replace_all("\\/", " or") %>% str_squish()
+  stat_coreq[i] <-
+    grep("Corequisite:", stat_course_info, value = TRUE) %>% paste0(collapse = "") %>%
+    str_remove("Corequisite:") %>% str_replace_all("\\/", " or") %>% str_squish()
+  stat_prereq[i] <-
+    grep("Prerequisite:", stat_course_info, value = TRUE) %>% paste0(collapse = "") %>%
+    str_remove("Prerequisite:") %>% str_replace_all("\\/", " or") %>% str_squish()
+  stat_rec_prep[i] <-
+    grep("Recommended Preparation:", stat_course_info, value = TRUE) %>% paste0(collapse = "") %>%
+    str_remove("Recommended Preparation:") %>% str_replace_all("\\/", " or") %>% str_squish()
+  stat_breadth[i] <-
+    grep("Breadth Requirements:", stat_course_info, value = TRUE) %>% paste0(collapse = "") %>%
+    str_remove("Breadth Requirements:") %>% str_squish()
+  stat_dist[i] <-
+    grep("Distribution Requirements:", stat_course_info, value = TRUE) %>% paste0(collapse = "") %>%
+    str_remove("Distribution Requirements:") %>% str_squish()
+  stat_mode[i] <-
+    grep("Mode of Delivery:", stat_course_info, value = TRUE) %>% paste0(collapse = "") %>%
+    str_remove("Mode of Delivery:") %>% str_squish()
+  stat_hours[i] <-
+    grep("Hours:", stat_course_info, value = TRUE) %>% paste0(collapse = "") %>%
+    str_remove("Hours:") %>% str_squish()
+  i <- i + 1
+}
+
+stat_lecture <- grepl("L", stat_hours)
+stat_lab <- grepl("P", stat_hours)
+stat_seminar <- grepl("S", stat_hours)
+stat_tutorial <- grepl("T", stat_hours)
+
+stat_course_calendar <-
+  data.frame(
+    stat_course_code,
+    stat_course_name,
+    stat_course_description,
+    stat_credit_amount,
+    stat_antireq,
+    stat_coreq,
+    stat_prereq,
+    stat_rec_prep,
+    stat_hours,
+    stat_lecture,
+    stat_lab,
+    stat_seminar,
+    stat_tutorial,
+    stat_breadth,
+    stat_dist,
+    stat_mode,
+    stat_note
+  )
+colnames(stat_course_calendar) <-
+  c(
+    "Course Code",
+    "Course Name",
+    "Course Description",
+    "Credit Amount",
+    "Antirequisite",
+    "Corequisite",
+    "Prerequisite",
+    "Recommended Preperation",
+    "Hours",
+    "Lecture",
+    "Lab",
+    "Seminar",
+    "Tutorial",
+    "Breadth Requirement",
+    "Distribution Requirement",
+    "Delivery Format",
+    "Note"
+  )
+
+# Write CSV Files ####
+
+# write.csv(cs_course_calendar, "University of Toronto Computer Science Course Calendar.csv")
+# write.csv(math_course_calendar, "University of Toronto Mathematics Course Calendar.csv")
+# write.csv(stat_course_calendar, "University of Toronto Statistics Course Calendar.csv")
