@@ -8,6 +8,7 @@ library(stringi)
 library(tidyverse)
 library(curl)
 
+
 # Computer Science Course Calendar ####
 
 cs_page <-
@@ -64,11 +65,15 @@ while (i <= cs_num_courses) {
     str_remove_all("Antirequisite\\(s\\)(:)?") %>% str_squish() %>% paste0(collapse = "")
   pre_co_req <-
     grep("Pre\\sor\\sCorequisites", course_info, value = TRUE) %>%
-    str_split("\\.") %>% unlist()
+    str_remove_all("Pre\\sor\\sCorequisites") %>%
+    str_split("(\\.)(?![0-9])(?<![0-9])") %>%
+    unlist()
   cs_coreq[i] <- grep("Corequisite", pre_co_req, value = TRUE) %>%
-    str_remove_all("Corequisite\\(s\\)(:)?") %>% str_squish() %>% paste0(collapse = "")
+    str_remove_all("(Corequisite\\(s\\)(:)?)|(Pre\\-or\\sCorequisite\\(s\\)(:)?)") %>%
+    unlist() %>% str_squish() %>% paste0(collapse = "")
   cs_prereq[i] <- grep("Prerequisite", pre_co_req, value = TRUE) %>%
-    str_remove_all("Prerequisite\\(s\\)(:)?") %>% str_squish() %>% paste0(collapse = "")
+    str_remove_all("(Prerequisite\\(s\\)(:)?)") %>% str_squish() %>%
+    unlist() %>% paste0(collapse = "")
   i <- i + 1
 }
 
