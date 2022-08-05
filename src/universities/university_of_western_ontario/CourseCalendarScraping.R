@@ -645,19 +645,19 @@ combined_course_calendar <- bind_rows(
 
 # Write CSV Files ####
 
-write.csv(
-  cs_course_calendar,
-  "University of Western Ontario Computer Science Course Calendar.csv"
-)
-write.csv(data_course_calendar,
-          "University of Western Ontario Data Science Course Calendar.csv")
-write.csv(math_course_calendar,
-          "University of Western Ontario Mathematics Course Calendar.csv")
-write.csv(
-  se_course_calendar,
-  "University of Western Ontario Software Engineering Course Calendar.csv"
-)
-write.csv(
-  stat_course_calendar,
-  "University of Western Ontario Statistical Sciences Course Calendar.csv"
-)
+# write.csv(
+#   cs_course_calendar,
+#   "University of Western Ontario Computer Science Course Calendar.csv"
+# )
+# write.csv(data_course_calendar,
+#           "University of Western Ontario Data Science Course Calendar.csv")
+# write.csv(math_course_calendar,
+#           "University of Western Ontario Mathematics Course Calendar.csv")
+# write.csv(
+#   se_course_calendar,
+#   "University of Western Ontario Software Engineering Course Calendar.csv"
+# )
+# write.csv(
+#   stat_course_calendar,
+#   "University of Western Ontario Statistical Sciences Course Calendar.csv"
+# )
