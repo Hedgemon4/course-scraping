@@ -10,8 +10,6 @@ library(tidyverse)
 # Source for functions
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
-# TODO List ####
-
 # Program Requirements ####
 web_link <-
   "https://catalog.umanitoba.ca/undergraduate-studies/science/data-science/data-science-bsc-major"
@@ -216,7 +214,7 @@ colnames(program_requirements) <- c(
 
 View(program_requirements)
 
-# Output CSV ####
+# Write CSV Files ####
 # write.csv(program_requirements,
 #           "University of Manitoba Data Science Program Requirements.csv")
 # write.csv(course_info, "University of Manitoba Data Science Required Courses.csv")
