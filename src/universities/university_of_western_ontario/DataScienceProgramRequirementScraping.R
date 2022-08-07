@@ -123,4 +123,7 @@ colnames(program_requirements) <- c(
 
 # Write CSV File ####
 
-# write.csv(program_requirements, "University of Western Ontario Data Science Program Requirements.csv")
+# write.csv(
+#   program_requirements,
+#   "University of Western Ontario Data Science Program Requirements.csv"
+# )
