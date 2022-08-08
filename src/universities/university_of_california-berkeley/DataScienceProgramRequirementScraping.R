@@ -21,13 +21,32 @@ course_links <- html_nodes(program_page, "div#majorrequirementstextcontainer > t
   html_attr("href") 
 link_text <- html_nodes(program_page, "div#majorrequirementstextcontainer > table > tbody > tr > td.codecol > a") %>%
   html_text()
-
-test_frame <- data.frame(link_text)
-  
 course_code <- vector(mode = "character")
+num_links <- length(link_text)
+
+# Due to some of the link names having equivalent courses in them, they meed to be
+# parsed to reduce them down to the first name
+
+i <- 1
+while(i <= num_links){
+  item <- link_text[i]
+  if(grepl("\\/", item)){
+    name <- str_extract(item, "(.+?)(?=\\/)")
+    if(!grepl("([A-Z]?[0-9]{1,3}[A-Z]{0,1})", name)){
+      name <- paste0(name, str_extract(item, "(\\s[A-Z]?[0-9]{1,3}[A-Z]{0,1})"))
+    }
+    course_code[i] <- name
+  }else{
+    course_code[i] <- item
+  }
+  i <- i + 1
+}
+  
 course_name <- vector(mode = "character")
 course_description <- vector(mode = "character")
+course_title <- vector(mode = "character")
 
+i <- 1
 for(link in course_links){
   course_page <- read_html(
     curl(
@@ -35,8 +54,26 @@ for(link in course_links){
       handle = curl::new_handle("useragent" = "Mozilla/5.0")
     )
   )
-  
+  courses <- html_nodes(course_page, "#fssearchresults > div.searchresult.search-courseresult > h2") %>% 
+    html_text() %>% str_squish()
+  index <- grep(paste0("^", course_code[i]), courses)
+  course_title[i] <- html_nodes(course_page, "#fssearchresults > div.searchresult.search-courseresult > h2") %>% 
+    .[[index]] %>% html_text() %>% str_squish()
+  i <- i + 1
 }
+
+test_course <- read_html(
+  curl(
+    paste0("http://guide.berkeley.edu", course_links[10]),
+    handle = curl::new_handle("useragent" = "Mozilla/5.0")
+  )
+)
+test_code <- html_nodes(test_course, "#fssearchresults > div.searchresult.search-courseresult > h2") %>% 
+  html_text() %>% str_squish()
+
+
+
+test_frame <- data.frame(course_code)
 
 test_page <- read_html(
   curl(
