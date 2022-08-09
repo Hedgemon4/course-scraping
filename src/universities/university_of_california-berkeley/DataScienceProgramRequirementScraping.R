@@ -56,34 +56,14 @@ for(link in course_links){
   )
   courses <- html_nodes(course_page, "#fssearchresults > div.searchresult.search-courseresult > h2") %>% 
     html_text() %>% str_squish()
-  index <- grep(paste0("^", course_code[i]), courses)
+  pattern <- paste0("(","^", str_replace_all(course_code[i], "\\s", " "), ")") 
+  index <- grep(pattern, courses, perl = TRUE)
   course_title[i] <- html_nodes(course_page, "#fssearchresults > div.searchresult.search-courseresult > h2") %>% 
     .[[index]] %>% html_text() %>% str_squish()
   i <- i + 1
 }
 
-test_course <- read_html(
-  curl(
-    paste0("http://guide.berkeley.edu", course_links[10]),
-    handle = curl::new_handle("useragent" = "Mozilla/5.0")
-  )
-)
-test_code <- html_nodes(test_course, "#fssearchresults > div.searchresult.search-courseresult > h2") %>% 
-  html_text() %>% str_squish()
-
-
-
-test_frame <- data.frame(course_code)
-
-test_page <- read_html(
-  curl(
-    "http://guide.berkeley.edu/search/?P=DATA%20C8",
-    handle = curl::new_handle("useragent" = "Mozilla/5.0")
-  )
-)
-
-test_info <- html_nodes(test_page, "#fssearchresults > div.searchresult.search-courseresult > h2") %>% 
-  .[[1]] %>% html_text() %>% str_squish()
+test_frame <- data.frame(course_title)
 
 # Program Requirements ####
 
