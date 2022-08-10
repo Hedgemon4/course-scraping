@@ -52,11 +52,14 @@ course_name <- vector(mode = "character")
 credit_amount <- vector(mode = "numeric")
 course_description <- vector(mode = "character")
 course_title <- vector(mode = "character")
+antireq <- vector(mode = "character")
 prereq <- vector(mode = "character")
+equiv <- vector(mode = "character")
 hours <- vector(mode = "character")
 lecture <- vector(mode = "logical")
 lab <- vector(mode = "logical")
-test <- vector(mode = "character")
+tutorial <- vector(mode = "logical")
+seminar <- vector(mode = "logical")
 
 i <- 1
 for (link in course_links) {
@@ -77,7 +80,7 @@ for (link in course_links) {
     .[[index]] %>% html_text() %>% str_squish()
   course_name[i] <-
     gsub(
-      "(.*[A-Z]?[0-9]{1,3}[A-Z]{0,2})(\\s.*)((?:[0-9]\\s\\-\\s)?[0-9]\\sUnits)",
+      "(.+?[A-Z]?[0-9]{1,3}[A-Z]{0,2})(\\s.+?)((?:[0-9]\\s\\-\\s)?[0-9]\\sUnits)",
       "\\2",
       course_title
     ) %>%
@@ -99,12 +102,17 @@ for (link in course_links) {
     .[[index]] %>% html_nodes("div > div > div > div > p") %>% html_text() %>% str_squish()
   prereq[i] <- grep("Prerequisites:", other_info, value = TRUE) %>%
     str_remove("Prerequisites:\\s") %>% paste0("")
+  antireq[i] <- grep("Credit\\sRestrictions:\\s", other_info, value = TRUE) %>%
+    str_remove("Credit\\sRestrictions:\\s") %>% paste0("") 
+  equiv[i] <- grep("Also\\slisted\\sas:\\s", other_info, value = TRUE) %>%
+    str_remove("Also\\slisted\\sas:\\s") %>% paste0("")
   hours[i] <-
     grep("Fall\\sand\\/or\\sspring:", other_info, value = TRUE) %>%
     str_remove("Fall\\sand\\/or\\sspring:") %>% paste0("")
   lecture[i] <- grepl("lecture", hours[i])
   lab[i] <- grepl("laboratory ", hours[i])
-  test <- paste(other_info, collapse = " ")
+  tutorial[i] <- grepl("discussion", hours[i])
+  seminar[i] <- grepl("seminar", hours[i])
   i <- i + 1
 }
 
@@ -114,22 +122,15 @@ required_courses <-
     course_name,
     course_description,
     credit_amount,
+    antireq,
     prereq,
+    equiv,
     hours,
     lecture,
-    lab
+    lab, 
+    seminar, 
+    tutorial
   )
-
-
-test_page <- read_html(curl(
-  paste0("http://guide.berkeley.edu", course_links[1]),
-  handle = curl::new_handle("useragent" = "Mozilla/5.0")
-))
-
-test_info1 <-
-  html_nodes(test_page,
-             "#fssearchresults > div.searchresult.search-courseresult") %>%
-  .[[index]] %>% html_nodes("div > div > div > div > p") %>% html_text() %>% str_squish()
 
 # Program Requirements ####
 
@@ -158,40 +159,13 @@ categories <- "Category L1"
 category_description <- "All of"
 min_credits <- vector(mode = "character")
 max_credits <- vector(mode = "character")
+isCore <- vector(mode = "logical")
 letter <- "L"
 j <- 2
 k <- 1
-alph_count <- 1
+num_count <- 1
 table_num <- 1
-alphabet <-
-  c(
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H",
-    "I",
-    "J",
-    "K",
-    "L",
-    "M",
-    "N",
-    "O",
-    "P",
-    "Q",
-    "R",
-    "S",
-    "T",
-    "U",
-    "V",
-    "W",
-    "X",
-    "Y",
-    "Z"
-  )
+numbers <- rep(1:100) %>% str_pad(3, side = "left", pad = "0")
 
 i <- 2
 while (i <= num_courses) {
@@ -207,7 +181,7 @@ while (i <= num_courses) {
     } else{
       category_description[j] <- "Choose one of the following: "
     }
-    alph_count <- 1
+    num_count <- 1
     j <- j + 1
   } else if (grepl("or", item)) {
     new_description <-
@@ -216,8 +190,8 @@ while (i <= num_courses) {
   } else {
     category_description[j] <- item
     categories[j] <-
-      paste0("Category ", letter, k, alphabet[alph_count])
-    alph_count <- alph_count + 1
+      paste0("Category ", letter, k, numbers[num_count])
+    num_count <- num_count + 1
     j <- j + 1
   }
   i <- i + 1
