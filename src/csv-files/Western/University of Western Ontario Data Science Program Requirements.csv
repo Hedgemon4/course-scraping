@@ -1,4 +1,4 @@
-"","Requirement Category","Category Description","Category Minimum","Category Maximum","Core Requirement"
+"","Requirement Category","Category Description","Category Minimum Credit Amount","Category Maximum Credit Amount","Core Requirement"
 "1","Category G1","21 credits from: Data Science 2000A/B, Computer Science 2210A/B, Computer Science 2211A/B, Computer Science 2212A/B/Y, Statistical Sciences 2857A/B, Statistical Sciences 2858A/B, Statistical Sciences 2864A/B.",21,21,TRUE
 "2","Category G2","18 credits from: Data Science 3000A/B (or the former Computer Science 4414A/B, the former Statistical Sciences 3850F/G, Software Engineering 4460A/B), Statistical Sciences 3843A/B, Statistical Sciences 3859A/B, Statistical Sciences 3860A/B, Computer Science 3319A/B, Computer Science 3340A/B.",18,18,FALSE
 "3","Category G2A","Data Science 3000A/B (or the former Computer Science 4414A/B, the former Statistical Sciences 3850F/G, Software Engineering 4460A/B)",3,3,FALSE

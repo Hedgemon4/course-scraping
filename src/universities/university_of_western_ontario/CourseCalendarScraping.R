@@ -11,6 +11,8 @@ library(curl)
 
 # Computer Science Course Calendar ####
 
+# Reads the page from the academic calendar containing information about the Computer
+# Science courses at Western
 cs_page <-
   read_html(
     curl(
@@ -19,9 +21,11 @@ cs_page <-
     )
   )
 
+# Links to the computer science courses
 cs_course_links <- html_nodes(cs_page, ".col-md-12 .btn-info") %>%
   html_attr("href")
 
+# Computer Science course names and codes
 cs_course_title <-
   html_nodes(cs_page,
              "div.col-md-12 > div.panel-group > div > div.panel-heading") %>%
@@ -36,7 +40,10 @@ cs_course_name <-
        cs_course_title) %>%
   str_squish() %>% str_to_title()
 
+# Counts number of computer science courses
 cs_num_courses <- length(cs_course_links)
+
+# Vectors to put computer science course information into
 cs_course_description <-
   vector(mode = "character", length = cs_num_courses)
 cs_credit_amount <-
@@ -49,11 +56,16 @@ cs_notes <- vector(mode = "character", length = cs_num_courses)
 cs_breadth <- vector(mode = "character", length = cs_num_courses)
 
 i <- 1
+# Loop goes to the page for each computer science course, scraps the information,
+# and sorts it into the proper vector for the data frame
 while (i <= cs_num_courses) {
+  # Page containing the information about the computer science course
   course_page <- read_html(curl(
     paste0("https://www.westerncalendar.uwo.ca/", cs_course_links[i]),
     handle = curl::new_handle("useragent" = "Mozilla/5.0")
   ))
+  # Vector containing all the information about the course, which is parsed using
+  # regex to get and clean the relevant information
   course_info <-
     html_nodes(course_page, "#CourseInformationDiv .col-xs-12") %>%
     html_text() %>% str_squish()
@@ -90,13 +102,16 @@ while (i <= cs_num_courses) {
   i <- i + 1
 }
 
+# Generates logical vectors based on what the hours vector contains for each course
 cs_lecture <- grepl("lecture", cs_hours)
 cs_lab <- grepl("laboratory", cs_hours)
 cs_tutorial <-
   grepl("(?<!\\/)(tutorial)(?!\\/)", cs_hours, perl = TRUE)
 
+# Standardizes the credits amount to the same format used at UBC
 cs_credit_amount <- cs_credit_amount * 6
 
+# Creates and names course calendar for computer science courses
 cs_course_calendar <- data.frame(
   cs_course_code,
   cs_course_name,
@@ -129,6 +144,10 @@ colnames(cs_course_calendar) <- c(
 )
 
 # Data Science Course Calendar ####
+
+# Due to the code for each course calendar being functionally the same, refer to
+# the computer science course calendar for comments about the code. Any differences
+# are commented below
 
 data_page <-
   read_html(
@@ -343,6 +362,13 @@ math_lecture <- grepl("lecture", math_hours)
 math_lab <- grepl("laboratory|lab", math_hours)
 math_tutorial <-
   grepl("(?<!\\/)(tutorial)(?!\\/)", math_hours, perl = TRUE)
+
+# The math course calendar contains the courses offered by all of the campuses
+# and facilities associated with Western, but only the courses at the main campus
+# are relevant (as the courses at the other campuses are duplicates of the ones
+# on the main campus). As such, the code below generates a vector of indices
+# containing only courses on the main campus, which is then extracted from the
+# vectors and placed into a data frame
 
 main_campus_math <-
   html_nodes(math_page, "div > div.panel-heading > a > div > img") %>%
@@ -598,6 +624,10 @@ stat_tutorial <-
 
 stat_credit_amount <- stat_credit_amount * 6
 
+# As mentioned for the math data frame, the stat courses from all campuses are included
+# and scraped, but only the main campus courses are required for the program, so they
+# are excluded form the data frame.
+
 main_campus_stat <-
   html_nodes(stat_page, "div > div.panel-heading > a > div > img") %>%
   html_attr("alt") %>% grep("Western", .)
@@ -635,6 +665,8 @@ colnames(stat_course_calendar) <- c(
 
 # Combined Course Calendar ####
 
+# Combines all the data frames into one so the program requirement code has easier
+# access to the course credit amounts
 combined_course_calendar <- bind_rows(
   cs_course_calendar,
   data_course_calendar,
