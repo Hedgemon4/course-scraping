@@ -8,7 +8,6 @@ library(stringi)
 library(tidyverse)
 library(curl)
 
-
 # Computer Science Course Calendar ####
 
 # Reads the page from the academic calendar containing information about the Computer
