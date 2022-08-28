@@ -1,4 +1,4 @@
-# Course Scraping Waterloo Data Science Requirements
+# Course Scraping Waterloo Data Science Requirements ####
 
 # Load required packages
 library(rvest)
@@ -9,8 +9,6 @@ library(stringi)
 # Source for functions
 source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
 
-# TODO List ####
-
 # Functions ####
 seperate_information <-
   function(match_item,
@@ -20,6 +18,8 @@ seperate_information <-
            course_dataframe,
            vector_type,
            break_if_match) {
+    # This takes information scraped into a single vector or text block and separates
+    # it out into multiple vectors depending on the parameters specified
     information <-
       read_html(web_link) %>% html_nodes(node) %>% html_text() %>% str_squish() %>% stri_remove_empty()
     columns <- list()
@@ -90,6 +90,11 @@ get_other_course_info <- function(link, n) {
 
 # Course Calendars ####
 
+# scrapes course calendars for subjects with courses required by the data science
+# program
+
+# Creates a data frame for the computer science course calendar, and gets their
+# course code, name, and description
 cs_courses_waterloo <-
   get_text_dataframe(
     "http://ugradcalendar.uwaterloo.ca/courses/CS",
@@ -101,6 +106,8 @@ cs_courses_waterloo <-
 colnames(cs_courses_waterloo) <-
   c('Course Code', 'Course Name', 'Course Description')
 
+# Creates a data frame for the math course calendar, and gets their
+# course code, name, and description
 math_courses_waterloo <-
   get_text_dataframe(
     "http://ugradcalendar.uwaterloo.ca/courses/MATH",
@@ -112,6 +119,9 @@ math_courses_waterloo <-
 colnames(math_courses_waterloo) <-
   c('Course Code', 'Course Name', 'Course Description')
 
+
+# Creates a data frame for the statistics course calendar, and gets their
+# course code, name, and description
 stat_courses_waterloo <-
   get_text_dataframe(
     "http://ugradcalendar.uwaterloo.ca/courses/STAT",
@@ -123,7 +133,7 @@ stat_courses_waterloo <-
 colnames(stat_courses_waterloo) <-
   c('Course Code', 'Course Name', 'Course Description')
 
-# Clean Data
+# Cleans the course codes in the generated data frames
 clean_from_data <-
   "LEC|LAB|\\,|TST|TUT|0\\.50|PRJ|RDG|STU|0\\.25|0\\.00|2\\.50"
 cs_courses_waterloo["Course Code"] <-
@@ -139,6 +149,9 @@ other_info_column_names <-
     "Corequisite",
     "Note",
     "Other Information")
+
+# Gets any other relevant information for each of the courses in the course
+# calendars (prereqs, antireqs, hours, etc.)
 
 math_other_course_info <-
   get_other_course_info("http://ugradcalendar.uwaterloo.ca/courses/MATH",
@@ -162,7 +175,7 @@ colnames(stat_other_course_info) <- other_info_column_names
 stat_courses_waterloo <-
   cbind(stat_courses_waterloo, stat_other_course_info)
 
-# Scrape Course Component Data
+# Scrape Course Component Data (labs, lectures, etc.)
 course_component <-
   c("LEC", "LAB", "TST", "TUT", "PRJ", "RDG", "STU")
 
@@ -210,6 +223,9 @@ stat_courses_waterloo <-
 
 # Scrape Credit Data
 
+# Gets credit information for courses and standarizes it to the same scale UBC
+# uses
+
 cs_course_credits <- get_text_css(
   "http://ugradcalendar.uwaterloo.ca/courses/CS",
   ".divTableCell:nth-child(1) strong"
@@ -237,6 +253,7 @@ colnames(stat_credit_dataframe) <- "Credit Amount"
 stat_courses_waterloo <-
   cbind(stat_courses_waterloo, stat_credit_dataframe)
 
+# Generates a coruse calendar containing all the course calendars scraped
 course_calendar <-
   rbind(cs_courses_waterloo,
         math_courses_waterloo,
@@ -244,10 +261,13 @@ course_calendar <-
 
 # Program Requirements ####
 
+# Scrapes program requirements from Waterloo Data Science Academic calendar
+
 program_link <-
   "http://ugradcalendar.uwaterloo.ca/page/MATH-Data-Science1"
 program_page <- read_html(program_link)
 
+# Vectors for program requirement information
 category_description <-
   html_elements(program_page, xpath = "//*[@id=\"ctl00_contentMain_lblContent\"]/ul/li/text()") %>% html_text() %>% str_squish()
 num_categories <- length(category_description)
@@ -255,6 +275,11 @@ category <- vector(mode = "character", length = num_categories)
 category_min <- vector(mode = "numeric", length = num_categories)
 category_max <- vector(mode = "numeric", length = num_categories)
 isCore <- vector(mode = "logical", length = num_categories)
+
+# The following loop goes through each requirement category, and adds the
+# required courses to the category description, determines the category credit
+# amount based on the description (one of, two of, etc.), and if the requirement
+# is a core requirement (must be taken, no other options)
 
 i <- 1
 for (item in category_description) {
@@ -269,13 +294,16 @@ for (item in category_description) {
       )
     ) %>%
     html_text %>% str_squish() %>% str_extract_all("(CS|MATH|STAT).([0-9]{3})([A-Z]?)") %>% unlist() %>% str_squish()
+  # Puts the course codes for the category into one string
   courses_collapsed <- paste(courses_in_category, collapse = ", ")
   category_description[i] <-
     paste0(description, courses_collapsed)
   category[i] <- paste0("Category G", i)
+  # Gets credit amounts from the course calendar
   credit <-
     filter(course_calendar, `Course Code` %in% courses_in_category) %>% select(`Credit Amount`) %>% .[[1]] %>% sort(decreasing = TRUE)
   sum_credit <- sum(credit)
+  # Determines the category credit amount
   if (grepl("One.of", item)) {
     category_max[i] <- max(credit)
     category_min[i] <- min(credit)
@@ -290,28 +318,37 @@ for (item in category_description) {
     category_max[i] <- -1.0
     category_min[i] <- -1.0
   }
+  # Determines if the category is a core requirement (all courses must be taken).
+  # This means that the sum of credits in the category should be the max and the
+  # min (meaning all credits are required)
   if (sum_credit == category_max[i] & sum_credit == category_min[i])
     isCore[i] = TRUE
   i <- i + 1
 }
 
+# Generates a data frame for the program requirements
 program_requirements <-
   data.frame(category,
              category_description,
              category_min,
              category_max,
              isCore)
+
 colnames(program_requirements) <- c(
   "Requirement Category",
   "Category Description",
   "Category Minimum Credit Amount",
   "Category Maximum Credit Amount",
-  "Core Course"
+  "Core Requirement"
 )
 
 # Write CSV Files ####
 
-# write.csv(program_requirements, "University of Waterloo Data Science Program Requirements.csv")
-# write.csv(cs_courses_waterloo, "University of Waterloo Computer Science Course Calendar.csv")
-# write.csv(math_courses_waterloo, "University of Waterloo Mathematics Course Calendar.csv")
-# write.csv(stat_courses_waterloo, "University of Waterloo Statistics Course Calendar.csv")
+# write.csv(program_requirements,
+#           "University of Waterloo Data Science Program Requirements.csv")
+# write.csv(cs_courses_waterloo,
+#           "University of Waterloo Computer Science Course Calendar.csv")
+# write.csv(math_courses_waterloo,
+#           "University of Waterloo Mathematics Course Calendar.csv")
+# write.csv(stat_courses_waterloo,
+#           "University of Waterloo Statistics Course Calendar.csv")

@@ -1,4 +1,4 @@
-"","Requirement Category","Category Description","Category Minimum Credit Amount","Category Maximum Credit Amount","Core Course"
+"","Requirement Category","Category Description","Category Minimum Credit Amount","Category Maximum Credit Amount","Core Requirement"
 "1","Category G1","One of: MATH 237, MATH 247",3,3,FALSE
 "2","Category G2","All of: ENGL 378, STAT 330, STAT 331, STAT 332, STAT 333",15,15,TRUE
 "3","Category G3","One of: MATH 239, MATH 249, AMATH 231, AMATH 242, CS 371, AMATH 250, AMATH 251, AMATH 350",3,3,FALSE

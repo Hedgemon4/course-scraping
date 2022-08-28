@@ -1,4 +1,4 @@
-"","Requirement Category","Category Description","Category Minimum Credit Amount","Category Maximum Credit Amount","Core Course"
+"","Requirement Category","Category Description","Category Minimum Credit Amount","Category Maximum Credit Amount","Core Requirement"
 "1","Category G1","One of: CS 136, CS 146",3,3,FALSE
 "2","Category G2","One of: MATH 239, MATH 249",3,3,FALSE
 "3","Category G3","All of: CS 136L, CS 240, CS 241, CS 245, CS 246, CS 251, CS 341, CS 348, STAT 341",25.5,25.5,TRUE
