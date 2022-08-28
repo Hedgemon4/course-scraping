@@ -1,4 +1,7 @@
-# Course Calendar Scraping for Wilfrid Laurier University
+# Course Calendar Scraping for Wilfrid Laurier University ####
+
+# Scrapes course calendars for subjects which are required by the data science
+# program
 
 # Load required packages
 library(rvest)
@@ -8,11 +11,11 @@ library(stringi)
 library(tidyverse)
 library(curl)
 
-# Source for functions
-source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
-
 # Business Courses ####
 
+# Scrapes Business course calendar
+
+# Reads the business course calendar webpage
 business_link <-
   curl(
     "https://academic-calendar.wlu.ca/department.php?cal=1&d=2617&s=1036&y=85#Course_Offerings",
@@ -20,17 +23,21 @@ business_link <-
   )
 business_page <- read_html(business_link)
 
+# Reads the table that contains all the business courses
 business_table <-
   html_nodes(business_page, "#main > div.content > div > table") %>%
   html_table() %>% .[[1]]
 colnames(business_table) <-
   c("Course Code", "Course Name", "Credit Amount")
 
+# Gets the links to the individual business course pages
 business_course_links <-
   html_nodes(business_page, "#main > div.content > div > table > tr > td > a") %>%
   html_attr("href")
 
 num_business_courses <- nrow(business_table)
+
+# Vectors for information about each business course
 business_hours <- vector(mode = "character", num_business_courses)
 business_description <-
   vector(mode = "character", num_business_courses)
@@ -42,7 +49,12 @@ business_coreq <- vector(mode = "character", num_business_courses)
 business_prereq <- vector(mode = "character", num_business_courses)
 business_note <- vector("character", num_business_courses)
 
+# The loop goes to the link of each business course, scrapes infromation form 
+# the page, and uses regular expressions to sort it into the correct vectors 
+# from above. 
+
 i <- 1
+
 while (i <= num_business_courses) {
   course_page <-
     read_html(curl(
@@ -76,6 +88,8 @@ while (i <= num_business_courses) {
   i <- i + 1
 }
 
+# Gets the course credit amounts from the table with all the business courses
+# and converts them to the same scale used at UBC
 business_credits <-
   select(business_table, `Credit Amount`) %>% unlist() %>% unname() * 6
 
@@ -111,6 +125,12 @@ colnames(business_calendar) <-  c(
 )
 
 closeAllConnections()
+
+# As the following code for the course calendars is the same as for the business
+# one, the comments are omitted.
+
+# Note that some of the regular expressions are different based on the layout
+# of the webpage
 
 # Math and Statistics Courses ####
 
@@ -421,13 +441,13 @@ closeAllConnections()
 
 # Write CSV Files ####
 
-write.csv(business_calendar,
-          "Wilfrid Laurier University Business Course Calendar.csv")
-write.csv(
-  math_stat_calendar,
-  "Wilfrid Laurier University Mathematics and Statistics Course Calendar.csv"
-)
-write.csv(cs_calendar,
-          "Wilfrid Laurier University Computer Science Course Calendar.csv")
-write.csv(data_calendar,
-          "Wilfrid Laurier University Data Science Course Calendar.csv")
+# write.csv(business_calendar,
+#           "Wilfrid Laurier University Business Course Calendar.csv")
+# write.csv(
+#   math_stat_calendar,
+#   "Wilfrid Laurier University Mathematics and Statistics Course Calendar.csv"
+# )
+# write.csv(cs_calendar,
+#           "Wilfrid Laurier University Computer Science Course Calendar.csv")
+# write.csv(data_calendar,
+#           "Wilfrid Laurier University Data Science Course Calendar.csv")
