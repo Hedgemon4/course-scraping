@@ -7,23 +7,25 @@ library(stringr)
 library(stringi)
 library(tidyverse)
 
-# Source for functions
-source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
-
 # Program Requirements ####
+
+# Link to program requirements
 web_link <-
   "https://catalog.umanitoba.ca/undergraduate-studies/science/data-science/data-science-bsc-major"
 
+# Read the webpage containing the program requirement information
 web_page <- read_html(web_link)
 
+# Gets the course codes for the required courses
 course_codes <-
   html_nodes(web_page, "#degreerequirementstextcontainer .code") %>% html_text()
 
-course_nodes <-
-  html_nodes(web_page, "#degreerequirementstextcontainer .code")
-
 # Course Information ####
 
+# Gathers the information about each course potentially required by the program
+# (course code, name, description, credit amount, etc.)
+
+# Gets the links to the required courses
 courses_main_link <- "https://catalog.umanitoba.ca/"
 course_info_links <-
   html_nodes(web_page, "#degreerequirementstextcontainer .code") %>% html_attr("href")
@@ -42,8 +44,9 @@ notes <- vector(mode = "character", length = number_of_courses)
 equiv <- vector(mode = "character", length = number_of_courses)
 exclusive <- vector(mode = "character", length = number_of_courses)
 
-# Goes to each course code link, and seperates out the various details about the
-# courses into the column vectors declared aboce
+# Goes to each course code link, and separates out the various details about the
+# courses into the column vectors declared above using regex
+
 i <- 1
 for (item in course_info_links) {
   course_link <- paste0(courses_main_link, course_info_links[i])
@@ -63,6 +66,7 @@ for (item in course_info_links) {
   notes[i] <-
     paste(grep("Attributes:", course_information, value = TRUE),
           collapse = "")
+  # Needed as pre/co-requisites stored in the same text block
   prcr <-
     grep("PR/CR", course_information, value = TRUE) %>% strsplit(split = "\\.") %>% unlist()
   prereq[i] <-
@@ -80,6 +84,7 @@ for (item in course_info_links) {
   i = i + 1
 }
 
+# Logical vector for if the class requires a lab
 labs <- grepl("lab|Lab", course_description)
 
 # Data frame for storing the information about all the potentially required courses
@@ -114,30 +119,50 @@ colnames(course_info) <-
 
 # Program Requirements ####
 
+# Scraps the table which stores the required courses
 program_table <-
   html_nodes(web_page,
              "#degreerequirementstextcontainer > table.sc_plangrid") %>%
   html_table() %>% .[[1]]
 colnames(program_table) <- c("code", "name", "credit")
 
+# Removes empty rows
 program_table <- filter(program_table, code != "")
 
+# Vectors for program requirement information
 category <- vector(mode = "character")
 category_description <- vector(mode = "character")
 category_min_credit <- vector(mode = "numeric")
 category_max_credit <- vector(mode = "numeric")
 category_isCore <- vector(mode = "logical")
+
+# Tracks if the item is a sub category and needs to be placed into a category
+# as it is a non-core requirement (choose one of a list)
 isSub <- FALSE
+
 sub_category <- ""
 sub_category_description <- ""
 year <- "F"
 
+# Tracks which item in the program requirement vector the loop is on
 i <- 1
+
+# Tracks which category number in each year the loop is on
+# (ie in U1, j would be 1)
 j <- 1
+
+# Tracks which row of the table the loop is on
 rownum <- 0
+
+# Tracks the general requirement number
 k <- 1
+
+# This loop reads each row from the table containing the program requirements, and
+# places the items into the above vectors
 for (item in program_table$code) {
   rownum <- rownum + 1
+  # If the item is in a sub category and is a course code, add it to the current
+  # category
   if (isSub) {
     if (grepl("(COMP|MATH|STAT|DATA|SCI).([0-9]{4})", item) &
         program_table$credit[rownum] == "") {
@@ -145,6 +170,8 @@ for (item in program_table$code) {
         paste(" ", sub_category_description, item)
       next
     } else{
+      # The program reached the end of sub category items, and the information about
+      # that category needs to be calculated (credit amount)
       category[i] <- sub_category
       category_description[i] <-
         sub_category_description %>% str_squish()
@@ -152,6 +179,8 @@ for (item in program_table$code) {
         str_extract(sub_category_description, "([0-9])") %>% unlist() %>% as.numeric()
       category_min_credit[i] <- credit
       category_max_credit[i] <- credit
+      # As there are multiple options to fulfill the category, it is not a core
+      # requirement
       category_isCore[i] <- FALSE
       i <- i + 1
       j <- j + 1
@@ -159,22 +188,26 @@ for (item in program_table$code) {
     }
   }
   if (grepl("Year(s|) (1|2|3\\-4)", item)) {
+    # Switches the letter label for the year
     year_num <- str_extract(item, "[0-9]{1}") %>% as.numeric()
     year <- switch(year_num, "F", "S", "U")
     isSub <- FALSE
     j <- 1
     next
   } else if (grepl("Co\\-op.Requirements", item)) {
+    # Switches the letter category label to C (co-op)
     year <- "C"
     isSub <- FALSE
     j <- 1
     next
   } else if (grepl("([0-9]?).credit.hours.from:", item)) {
+    # start of a sub category
     isSub <- TRUE
     sub_category <- paste0("Category ", year, j)
     sub_category_description <- item %>% str_squish()
     next
   } else if (grepl("(COMP|MATH|STAT|DATA|SCI).([0-9]{4})", item)) {
+    # Item is a core course
     category_isCore[i] <- TRUE
     category[i] <- paste0("Category ", year, j)
     category_description[i] <- item
@@ -184,6 +217,7 @@ for (item in program_table$code) {
     i <- i + 1
     j <- j + 1
   } else{
+    # Item is a general requirement (elective)
     category_isCore[i] <- FALSE
     category[i] <- paste0("Category G", k)
     category_description[i] <- item
@@ -195,6 +229,7 @@ for (item in program_table$code) {
   }
 }
 
+# Creates a data frame for the program requirements
 program_requirements <-
   data.frame(
     category,

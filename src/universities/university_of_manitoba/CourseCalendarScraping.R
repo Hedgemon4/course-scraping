@@ -1,5 +1,8 @@
 # Program Calendar Scraping - University of Manitoba ####
 
+# This file scraps the course calendars for course types which can be used
+# to fill elective requirements
+
 # Load required packages
 library(rvest)
 library(dplyr)
@@ -8,11 +11,9 @@ library(stringi)
 library(tidyverse)
 library(curl)
 
-# Source for functions
-source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
-
 # Computer Science Course Calendar ####
 
+# Gets the webpage for computer science courses
 cs_page <-
   read_html(
     curl(
@@ -21,25 +22,34 @@ cs_page <-
     )
   )
 
+# Scraps computer science course codes
 cs_course_code <-
   html_nodes(
     cs_page,
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.col-3.detail-code.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text()
+
+# Scraps computer science course names
 cs_course_name <-
   html_nodes(
     cs_page,
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.col-7.detail-title.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text()
+
+# Scraps computer science course credit amounts
 cs_credit_amount <-
   html_nodes(
     cs_page,
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.detail-hours_html.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text() %>% str_remove_all("[^0-9]") %>% unlist() %>% as.numeric()
+
+# Number of computer science courses
 cs_num_courses <- length(cs_course_code)
+
+# Vectors to store information about computer science courses in
 cs_course_description <-
   vector(mode = "character", length = cs_num_courses)
 cs_prereq <- vector(mode = "character", length = cs_num_courses)
@@ -49,12 +59,19 @@ cs_equiv <- vector(mode = "character", length = cs_num_courses)
 cs_note <- vector(mode = "character", length = cs_num_courses)
 cs_lab <- vector(mode = "logical", length = cs_num_courses)
 
+# This loop scraps the information about each computer science course, and filters
+# the resulting vector using regex to place the information into the appropriate
+# vectors from above.
+
 i <- 1
+
 while (i <= cs_num_courses) {
+  # Scrap the course information for the next course
   cs_course_info <-
     html_nodes(cs_page,
                paste0("#coursestextcontainer > div > div:nth-child(", i, ") > div > p")) %>%
     html_text()
+  # Seperate information into the appropriate vectors
   cs_lab[i] <- grepl("Lab\\sRequired", cs_course_info[1])
   cs_course_description[i] <-
     cs_course_info[1] %>% str_remove("\\(Lab\\sRequired\\)") %>% str_squish()
@@ -83,6 +100,7 @@ while (i <= cs_num_courses) {
   i <- i + 1
 }
 
+# Create data frame for computer science courses
 cs_course_calendar <-
   data.frame(
     cs_course_code,
@@ -96,6 +114,7 @@ cs_course_calendar <-
     cs_lab,
     cs_note
   )
+
 colnames(cs_course_calendar) <-
   c(
     "Course Code",
@@ -109,6 +128,10 @@ colnames(cs_course_calendar) <-
     "Lab",
     "Note"
   )
+
+# The code for the following course calendars has been copied from above, so the
+# comments have been omitted, as it works the same with minor changes to the
+# regula expressions depending on how the information was layed out.
 
 # Mathematics Course Calendar ####
 
@@ -126,19 +149,23 @@ math_course_code <-
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.col-3.detail-code.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text()
+
 math_course_name <-
   html_nodes(
     math_page,
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.col-7.detail-title.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text()
+
 math_credit_amount <-
   html_nodes(
     math_page,
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.detail-hours_html.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text() %>% str_remove_all("[^0-9]") %>% unlist() %>% as.numeric()
+
 math_num_courses <- length(math_course_code)
+
 math_course_description <-
   vector(mode = "character", length = math_num_courses)
 math_prereq <- vector(mode = "character", length = math_num_courses)
@@ -198,6 +225,7 @@ math_course_calendar <-
     math_lab,
     math_note
   )
+
 colnames(math_course_calendar) <-
   c(
     "Course Code",
@@ -228,19 +256,23 @@ data_course_code <-
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.col-3.detail-code.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text()
+
 data_course_name <-
   html_nodes(
     data_page,
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.col-7.detail-title.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text()
+
 data_credit_amount <-
   html_nodes(
     data_page,
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.detail-hours_html.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text() %>% str_remove_all("[^0-9]") %>% unlist() %>% as.numeric()
+
 data_num_courses <- length(data_course_code)
+
 data_course_description <-
   vector(mode = "character", length = data_num_courses)
 data_prereq <- vector(mode = "character", length = data_num_courses)
@@ -300,6 +332,7 @@ data_course_calendar <-
     data_lab,
     data_note
   )
+
 colnames(data_course_calendar) <-
   c(
     "Course Code",
@@ -330,19 +363,23 @@ stat_course_code <-
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.col-3.detail-code.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text()
+
 stat_course_name <-
   html_nodes(
     stat_page,
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.col-7.detail-title.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text()
+
 stat_credit_amount <-
   html_nodes(
     stat_page,
     "#coursestextcontainer > div > div > div.cols.noindent > span.text.detail-hours_html.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text() %>% str_remove_all("[^0-9]") %>% unlist() %>% as.numeric()
+
 stat_num_courses <- length(stat_course_code)
+
 stat_course_description <-
   vector(mode = "character", length = stat_num_courses)
 stat_prereq <- vector(mode = "character", length = stat_num_courses)
@@ -402,6 +439,7 @@ stat_course_calendar <-
     stat_lab,
     stat_note
   )
+
 colnames(stat_course_calendar) <-
   c(
     "Course Code",
@@ -432,19 +470,23 @@ sci_course_code <-
     "#coursestextcontainer > div:nth-child(6) > div > div.cols.noindent > span.text.col-3.detail-code.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text()
+
 sci_course_name <-
   html_nodes(
     sci_page,
     "#coursestextcontainer > div:nth-child(6) > div > div.cols.noindent > span.text.col-7.detail-title.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text()
+
 sci_credit_amount <-
   html_nodes(
     sci_page,
     "#coursestextcontainer > div:nth-child(6) > div > div.cols.noindent > span.text.detail-hours_html.margin--tiny.text--semibold.text--big"
   ) %>%
   html_text() %>% str_remove_all("[^0-9]") %>% unlist() %>% as.numeric()
+
 sci_num_courses <- length(sci_course_code)
+
 sci_course_description <-
   vector(mode = "character", length = sci_num_courses)
 sci_prereq <- vector(mode = "character", length = sci_num_courses)
@@ -509,6 +551,7 @@ sci_course_calendar <-
     sci_lab,
     sci_note
   )
+
 colnames(sci_course_calendar) <-
   c(
     "Course Code",
@@ -525,17 +568,17 @@ colnames(sci_course_calendar) <-
 
 # Write CSV Files ####
 
-write.csv(cs_course_calendar,
-          "University of Manitoba Computer Science Course Calendar.csv")
-write.csv(
-  math_course_calendar,
-  "University of Manitoba Mathematics Science Course Calendar.csv"
-)
-write.csv(data_course_calendar,
-          "University of Manitoba Data Science Course Calendar.csv")
-write.csv(stat_course_calendar,
-          "University of Manitoba Statistics Course Calendar.csv")
-write.csv(
-  sci_course_calendar,
-  "University of Manitoba Interdisciplinary Science Course Calendar.csv"
-)
+# write.csv(cs_course_calendar,
+#           "University of Manitoba Computer Science Course Calendar.csv")
+# write.csv(
+#   math_course_calendar,
+#   "University of Manitoba Mathematics Science Course Calendar.csv"
+# )
+# write.csv(data_course_calendar,
+#           "University of Manitoba Data Science Course Calendar.csv")
+# write.csv(stat_course_calendar,
+#           "University of Manitoba Statistics Course Calendar.csv")
+# write.csv(
+#   sci_course_calendar,
+#   "University of Manitoba Interdisciplinary Science Course Calendar.csv"
+# )
