@@ -7,16 +7,18 @@ library(stringr)
 library(stringi)
 library(tidyverse)
 
-# Source for functions
-source("~/R/Projects/course-scraping/src/util/CourseScrapingUtil.R")
+# Required Course Calendars ####
 
-# TODO: Remove False from notes column
+# Get the course calendars which contain courses required by the program
 
 # Math and Stat Courses ####
+
+# Reads webpage containing the information about math and science courses at Concordia
 math_stat_course_link <-
   "https://www.concordia.ca/academics/undergraduate/calendar/current/section-31-faculty-of-arts-and-science/section-31-200-department-of-mathematics-and-statistics/mathematics-and-statistics-courses.html#2565"
 math_stat_course_page <- read_html(math_stat_course_link)
 
+# Scraps math/stat course titles (names, codes, and credit amounts)
 math_stat_courses <-
   html_nodes(
     math_stat_course_page,
@@ -24,18 +26,23 @@ math_stat_courses <-
   ) %>%
   html_text()
 
+# Number of math/stat courses
 math_stat_num_courses <- length(math_stat_courses)
+
+# Scraps the description for math/stat courses
 math_stat_course_description <-
   html_nodes(
     math_stat_course_page,
-    "#content-main > div > div > div.content-main.parsys > div.wysiwyg.parbase.section > div > div > div > div > div > div > div > div.content.accordion_accordion_panel > p.crse-descr"
-  ) %>%
-  html_text()
+    "#content-main > div > div > div.content-main.parsys > div.wysiwyg.parbase.section > div > div > div > div > div > div > div > div.content.accordion_accordion_panel > p.crse-descr, #content-main > div > div > div.content-main.parsys > div.wysiwyg.parbase.section > div > div > div > div > div > div > div > div.content.accordion_accordion_panel > p.crse-descr"
+  ) %>% html_text() %>% str_remove_all("Description:") %>% unlist() %>% str_squish()
 
+# Scraps the course code for math/stat courses
 math_stat_course_code <-
   str_extract_all(math_stat_courses,
                   "((?:ACTU|MACF|MATH|MAST|STAT)\\s[0-9]{3})") %>%
   unlist()
+
+# Extracts the course name from the course title
 math_stat_course_name <-
   gsub(
     "((?:ACTU|MACF|MATH|MAST|STAT)\\s[0-9]{3})(.*)(\\([0-9]?\\scredits\\))",
@@ -43,6 +50,8 @@ math_stat_course_name <-
     math_stat_courses
   ) %>%
   str_squish()
+
+# Extracts the credit amount from the course title
 math_stat_course_credit_amount <-
   gsub(
     "((?:ACTU|MACF|MATH|MAST|STAT)\\s[0-9]{3})(.*)(?:\\(([0-9]?)\\scredits\\))",
@@ -51,25 +60,31 @@ math_stat_course_credit_amount <-
   ) %>%
   str_squish() %>% as.numeric()
 
+# Scraps all the information about each course
 course_info <-
   html_nodes(
     math_stat_course_page,
     "#content-main > div > div > div.content-main.parsys > div.wysiwyg.parbase.section > div > div > div > div > div > div > div"
   ) %>%
-  html_text()
+  html_text() %>% str_squish()
 
+# Scarps the components for each course (lecture, labs, etc.)
 course_components <-
   html_nodes(
     math_stat_course_page,
     "#content-main > div > div > div.content-main.parsys > div.wysiwyg.parbase.section > div > div > div > div > div > div > div > div.content.accordion_accordion_panel > p > span.components"
   ) %>%
   html_text() %>% str_squish()
+
+# Scraps the pre/co-requisites for each course
 course_requisites <-
   html_nodes(
     math_stat_course_page,
     "#content-main > div > div > div.content-main.parsys > div.wysiwyg.parbase.section > div > div > div > div > div > div > div > div.content.accordion_accordion_panel > p > span.requisites"
   ) %>%
   html_text() %>% str_squish()
+
+# Scraps the antirequisites and other random information for the courses
 course_notes <-
   html_nodes(
     math_stat_course_page,
@@ -77,10 +92,19 @@ course_notes <-
   ) %>%
   html_text() %>% str_squish()
 
+# Creates a vector of indices which is true if the corresponding course has
+# any pre/co requisites
 has_requisites <- grepl("Prerequisite\\/Corequisite:", course_info)
+
+# Creates a vector of indices which is true if the corresponding course has
+# any course components listed (labs, lecture, etc.)
 has_components <- grepl("Component\\(s\\):", course_info)
+
+# Creates a vector of indices which is true if the corresponding course has
+# any course notes listed (includes antireqs and other info)
 has_notes <- grepl("Notes:", course_info)
 
+# Vectors for course information to be placed into
 antireq <- vector(mode = "character", math_stat_num_courses)
 coreq <- vector(mode = "character", math_stat_num_courses)
 prereq <- vector(mode = "character", math_stat_num_courses)
@@ -92,25 +116,41 @@ research <- vector(mode = "logical", math_stat_num_courses)
 reading <- vector(mode = "logical", math_stat_num_courses)
 notes <- vector(mode = "character", math_stat_num_courses)
 
+# loop index
 i <- 1
+
+# Tracks which item in the requirements vector the loop is on
+# (as not all courses have other requirements)
 req_index <- 1
+
+# Tracks which item in the components vector the loop as on
+# (as not all courses have their components listed, or don't have any)
 comp_index <- 1
+
+# Tracks which item the note index is on
+# (as not all courses have notes)
 note_index <- 1
+
+# This loop sorts through the above information, and sorts it into the proper
+# vector and row for each course using regular expressions
 while (i <= math_stat_num_courses) {
   if (has_requisites[i]) {
     item <-
       course_requisites[req_index] %>% str_split("\\.") %>% unlist()
+    # Get prereqs
     prereq[i] <-
       grep("course(s)?\\smust\\sbe\\scompleted\\spreviously:",
            item,
            value = TRUE) %>%
       paste(collapse = " ")
+    # Get coreqs
     coreq[i] <-
       grep("previously\\sor\\sconcurrently:", item, value = TRUE) %>%
       paste(collapse = " ")
     req_index <- req_index + 1
   }
   if (has_components[i]) {
+    # Sort lecture components
     item <- course_components[comp_index]
     lecture[i] <- grepl("Lecture", item)
     lab[i] <- grepl("Laboratory", item)
@@ -120,7 +160,9 @@ while (i <= math_stat_num_courses) {
     comp_index <- comp_index + 1
   }
   if (has_notes[i]) {
-    item <- course_notes[note_index] %>% str_split("\\.") %>% unlist()
+    # Gets anti requisites and other notes
+    item <-
+      course_notes[note_index] %>% str_split("\\.") %>% unlist()
     antireq[i] <-
       grep("(receive(d)?\\scredit)", item, value = TRUE) %>%
       paste(collapse = " ")
@@ -134,6 +176,8 @@ while (i <= math_stat_num_courses) {
   }
   i <- i + 1
 }
+
+# Generates data frame to hold the math and stat courses
 
 math_stat_course_dataframe <-
   data.frame(
@@ -169,6 +213,9 @@ colnames(math_stat_course_dataframe) <- c(
 )
 
 # Computer Science and Software Engineering Courses ####
+
+# As the code is nearly identical to the math/stat code, it is not commented.
+
 compsci_course_link <-
   "https://www.concordia.ca/academics/undergraduate/calendar/current/section-71-gina-cody-school-of-engineering-and-computer-science/section-71-70-department-of-computer-science-and-software-engineering/section-71-70-10-computer-science-and-software-engineering-courses.html#3527"
 compsci_course_page <- read_html(compsci_course_link)
@@ -186,7 +233,7 @@ compsci_course_description <-
     compsci_course_page,
     "#content-main > div > div > div.content-main.parsys > div.wysiwyg.parbase.section > div > div > div > div > div > div > div > div.content.accordion_accordion_panel > p.crse-descr"
   ) %>%
-  html_text()
+  html_text() %>% str_remove_all("Description:") %>% unlist() %>% str_squish()
 
 compsci_course_code <-
   str_extract_all(compsci_courses,
@@ -325,6 +372,9 @@ colnames(compsci_course_dataframe) <- c(
 )
 
 # Engineering Courses ####
+
+# As the code below is copied from the math/stat code, it is not commented
+
 engineering_course_link <-
   "https://www.concordia.ca/academics/undergraduate/calendar/current/section-71-gina-cody-school-of-engineering-and-computer-science/section-71-60-engineering-course-descriptions.html#3482"
 engineering_course_page <- read_html(engineering_course_link)
@@ -342,7 +392,7 @@ engineering_course_description <-
     engineering_course_page,
     "#content-main > div > div > div.content-main.parsys > div.wysiwyg.parbase.section > div > div > div > div > div > div > div > div.content.accordion_accordion_panel > p.crse-descr"
   ) %>%
-  html_text()
+  html_text() %>% str_remove_all("Description:") %>% unlist() %>% str_squish()
 
 engineering_course_code <-
   str_extract_all(
@@ -482,7 +532,9 @@ colnames(engineering_course_dataframe) <- c(
   "Notes"
 )
 
-# All Courses DataFrame
+# All Courses Data Frame
+
+# Merges the three scraped frames into one
 all_courses <-
   rbind(
     math_stat_course_dataframe,
@@ -492,38 +544,52 @@ all_courses <-
 
 # Program Requirements ####
 
+# Gets the requirements for the data science program
+
+# Reads the webpage on the Concordia academic calendar containing the required courses
 program_link <-
   "https://www.concordia.ca/academics/undergraduate/calendar/current/section-31-faculty-of-arts-and-science/section-31-200-department-of-mathematics-and-statistics/ba-bsc-joint-major-in-data-science.html"
 program_page <- read_html(program_link)
 
+# Extracts the course codes for the required courses
 required_courses <-
   html_nodes(program_page, ".formatted-course") %>%
   html_text() %>% str_squish() %>% gsub("(.*)((?:COMP|SOEN|ACTU|MACF|MATH|MAST|STAT|ENCS)\\s[0-9]{3})(.*)",
                                         "\\2",
                                         .)
 
+# Gets any non-course requirements for the program (electives)
 other_requirement_description <-
   html_nodes(program_page, ".joint-major-in-data-science tr+ tr td+ td") %>%
   html_text() %>% str_squish()
 
+# Gets the amount of credits required by non-course requirements
 other_requirements_credits <-
   html_nodes(program_page,
              ".joint-major-in-data-science tr+ tr td:nth-child(1)") %>%
   html_text() %>% str_squish()
 
+# Merges the other requirement description and credits into one vector
 other_requirements <-
   outer(other_requirements_credits,
         other_requirement_description,
         paste,
         " ") %>%
-  .[1,] %>% str_squish()
+  .[1, ] %>% str_squish()
 
+# Number of rows for the data frame
 num_categories <-
   length(required_courses) + length(other_requirements)
 
+# Generates the category names for the data frame
 requirement_category <-
   mapply(paste0, "Category G", rep(1:num_categories)) %>% as.vector()
+
+# Merges all category descriptions into one vector (course and non-course requirements)
 category_description <- c(required_courses, other_requirements)
+
+# Selects the credit amounts from all_courses data frame or from the category
+# description (for non-course requirements)
 credits <-
   c((
     filter(all_courses, `Course Code` %in% required_courses) %>% select(`Credit Amount`) %>% unlist() %>% as.vector()
@@ -531,11 +597,18 @@ credits <-
   (
     gsub("([0-9]+)(\\scredit)(.*)", "\\1", other_requirements) %>% as.numeric()
   ))
+
+# As there are no subcategories, all requirement maximums == minimum
 category_min <- credits
 category_max <- credits
+
+# As only the non-course requirements are not core, the vector is generated by
+# counting the number of course and non-course requirements and assigning the
+# correct Boolean x times
 isCore <-
   c(rep(TRUE, length(required_courses)), rep(FALSE, length(other_requirements)))
 
+# Creates a data frame for the course requirements
 program_requirements <-
   data.frame(requirement_category,
              category_description,
@@ -548,11 +621,18 @@ colnames(program_requirements) <- c(
   "Category Description",
   "Category Minimum Credit Amount",
   "Category Maximum Credit Amount",
-  "Core Course"
+  "Core Requirement"
 )
 
-# Write CSV Files
-# write.csv(program_requirements, "Concordia University Data Science Program Requirements.csv")
-# write.csv(math_stat_course_dataframe, "Concordia University Mathematics and Statistics Courses.csv")
-# write.csv(compsci_course_dataframe, "Concordia University Computer Science Courses.csv")
-# write.csv(engineering_course_dataframe, "Concordia University Engineering Courses.csv")
+# Write CSV Files ####
+
+# write.csv(program_requirements,
+#           "Concordia University Data Science Program Requirements.csv")
+# write.csv(
+#   math_stat_course_dataframe,
+#   "Concordia University Mathematics and Statistics Courses.csv"
+# )
+# write.csv(compsci_course_dataframe,
+#           "Concordia University Computer Science Courses.csv")
+# write.csv(engineering_course_dataframe,
+#           "Concordia University Engineering Courses.csv")
