@@ -1,4 +1,7 @@
-# University of Toronto Course Calendar Scraping
+# University of Toronto Course Calendar Scraping ####
+
+# Scraps course calendars for subject areas which can be used to fill some of the
+# data science degree requirements
 
 # Load required packages
 library(rvest)
@@ -10,7 +13,7 @@ library(curl)
 
 # Computer Science Course Calendar ####
 
-# Read webpage with course infromation
+# Read webpage with course information
 cs_page <-
   read_html(
     curl(
@@ -26,8 +29,10 @@ cs_course_title <-
     "#block-fas-content > div > div > div > div.view-footer > div.view.view-courses-view.view-id-courses_view > div.view-content > div > h3"
   ) %>%
   html_text()
+
 cs_course_code <-
   str_extract_all(cs_course_title, "(?:CSC|J(?:S|C)C)[0-9]{3}(Y|H)[0-9]{1}") %>% unlist()
+
 cs_course_name <-
   gsub(
     "((?:CSC|J(?:S|C)C)[0-9]{3}(?:Y|H)[0-9]{1})(\\s\\-\\s)(.*)",
@@ -59,7 +64,9 @@ cs_tutorial <- vector(mode = "logical", length = cs_num_courses)
 
 i <- 1
 # The loop scrapes data from each course and sorts the data into the correct vector
+# using regex
 while (i <= cs_num_courses) {
+  # Gets course description
   cs_course_text <- html_nodes(
     cs_page,
     paste0(
@@ -68,12 +75,14 @@ while (i <= cs_num_courses) {
       ") > div > div"
     )
   ) %>%
-    html_text() %>% str_squish() %>% paste(collapse = ". ") %>% str_split("((Note(s|))|(NOTE(S|))):") %>% unlist()
+    html_text() %>% str_squish() %>% paste(collapse = ". ") %>%
+    str_split("((Note(s|))|(NOTE(S|))):") %>% unlist()
   cs_course_description[i] <- cs_course_text[1] %>% paste("")
   cs_note[i] <-
     if_else(is.na(cs_course_text[2]), "", cs_course_text[2] %>% paste("")) %>%
     str_squish()
   cs_credit_amount[i] <- ifelse(grepl("Y", cs_course_code[i]), 6, 3)
+  # Other course information (everything except description)
   cs_course_info <- html_nodes(
     cs_page,
     paste0(
@@ -81,8 +90,7 @@ while (i <= cs_num_courses) {
       i,
       ") > div > span"
     )
-  ) %>%
-    html_text() %>% str_squish()
+  ) %>% html_text() %>% str_squish()
   cs_antireq[i] <-
     grep("Exclusion:", cs_course_info, value = TRUE) %>% paste0(collapse = "") %>%
     str_remove("Exclusion:") %>% str_replace_all("\\/", " or") %>% str_squish()
@@ -110,11 +118,13 @@ while (i <= cs_num_courses) {
   i <- i + 1
 }
 
+# Generats logical vectors based on if the course has labs, lectures, etc.
 cs_lecture <- grepl("L", cs_hours)
 cs_lab <- grepl("P", cs_hours)
 cs_seminar <- grepl("S", cs_hours)
 cs_tutorial <- grepl("T", cs_hours)
 
+# Creates course calendar for CS courses
 cs_course_calendar <-
   data.frame(
     cs_course_code,
@@ -135,6 +145,7 @@ cs_course_calendar <-
     cs_mode,
     cs_note
   )
+
 colnames(cs_course_calendar) <-
   c(
     "Course Code",
@@ -156,6 +167,11 @@ colnames(cs_course_calendar) <-
     "Note"
   )
 
+# Note that the following code for the other course calendars is functionally
+# the same as the above code, so some comments are omitted. The only changes
+# are to some of the regular expressions depending on how the information is
+# displayed on the website.
+
 # Mathematics Course Calendar ####
 
 # Read webpage with course information
@@ -174,8 +190,10 @@ math_course_title <-
     "#block-fas-content > div > div > div > div.view-footer > div.view.view-courses-view.view-id-courses_view > div.view-content > div > h3"
   ) %>%
   html_text()
+
 math_course_code <-
   str_extract_all(math_course_title, "(?:MAT|APM|JUM)[0-9]{3}(Y|H)[0-9]{1}") %>% unlist()
+
 math_course_name <-
   gsub(
     "((?:MAT|APM|JUM)[0-9]{3}(?:Y|H)[0-9]{1})(\\s\\-\\s)(.*)",
@@ -289,6 +307,7 @@ math_course_calendar <-
     math_mode,
     math_note
   )
+
 colnames(math_course_calendar) <-
   c(
     "Course Code",
@@ -328,8 +347,10 @@ stat_course_title <-
     "#block-fas-content > div > div > div > div.view-footer > div.view.view-courses-view.view-id-courses_view > div.view-content > div > h3"
   ) %>%
   html_text()
+
 stat_course_code <-
   str_extract_all(stat_course_title, "(?:STA|JSC)[0-9]{3}(Y|H)[0-9]{1}") %>% unlist()
+
 stat_course_name <-
   gsub("((?:STA|JSC)[0-9]{3}(?:Y|H)[0-9]{1})(\\s\\-\\s)(.*)",
        "\\3",
@@ -441,6 +462,7 @@ stat_course_calendar <-
     stat_mode,
     stat_note
   )
+
 colnames(stat_course_calendar) <-
   c(
     "Course Code",
@@ -464,6 +486,9 @@ colnames(stat_course_calendar) <-
 
 # Write CSV Files ####
 
-# write.csv(cs_course_calendar, "University of Toronto Computer Science Course Calendar.csv")
-# write.csv(math_course_calendar, "University of Toronto Mathematics Course Calendar.csv")
-# write.csv(stat_course_calendar, "University of Toronto Statistics Course Calendar.csv")
+# write.csv(cs_course_calendar,
+#           "University of Toronto Computer Science Course Calendar.csv")
+# write.csv(math_course_calendar,
+#           "University of Toronto Mathematics Course Calendar.csv")
+# write.csv(stat_course_calendar,
+#           "University of Toronto Statistics Course Calendar.csv")
