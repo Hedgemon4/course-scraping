@@ -1,4 +1,4 @@
-"","Requirement Category","Category Description","Category Minimum","Category Maximum","Core Requirement"
+"","Requirement Category","Category Description","Category Minimum Credit Amount","Category Maximum Credit Amount","Core Requirement"
 "1","Category L1","Students complete all of: BUS 200, BUS 217W, BUS 251, BUS 272, ",12,12,TRUE
 "2","Category L2","Students complete all of: CMPT 120, CMPT 125, CMPT 225, CMPT 276, CMPT 295, ",15,15,TRUE
 "3","Category L3","Students complete both of: MACM 101, MACM 201, ",6,6,TRUE
